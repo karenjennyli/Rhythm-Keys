@@ -20,12 +20,16 @@ class singleMode(Mode):
         mode.timerDelay = 1
         mode.initKeysHeld()
         mode.initButtonDimensions()
-        mode.players = 2 # will ask for user input of 1 or 2
+        mode.getNumberOfPlayers()
+        if mode.players == None:
+            return
         mode.initGameboards(mode.players)
         mode.initMusic()
         if mode.midi == None:
             return
         mode.initDifficulty()
+        if mode.difficulty == None:
+            return
         mode.initScrolling()
         mode.initGamePiecesAllBoards()
 
@@ -37,14 +41,29 @@ class singleMode(Mode):
             return
 
     def modeActivated(mode):
+        try:
+            pygame.mixer.music.stop()
+            pygame.quit()
+        except:
+            pass
         mode.appStarted()
+
+    def getNumberOfPlayers(mode):
+        mode.players = None
+        while not (isinstance(mode.players, int) and 1 <= mode.players <= 2):
+            playersString = mode.getUserInput("Enter number of players (1 or 2).")
+            if playersString == None:
+                return
+            try:
+                mode.players = int(playersString)
+            except:
+                continue
 
     def initGameboards(mode, players):
         keyDicts = []
         keyDict0 = {'1': 0, '2': 1, '3': 2, '4': 3, '5': 4}
         keyDict1 = {'6': 0, '7': 1, '8': 2, '9': 3, '0': 4}
         keyDicts.extend([keyDict0, keyDict1])
-        # mode.allKeys = set()
         mode.gameboards = []
         for i in range(mode.players):
             newBoard = Gameboard()
@@ -55,8 +74,14 @@ class singleMode(Mode):
     def initDifficulty(mode):
         mode.difficulty = None
         levels = {1, 2, 3, 4, 5}
-        while not isinstance(mode.difficulty, int) and not mode.difficulty in levels:
-            mode.difficulty = int(mode.getUserInput("Enter difficulty level from 1-5."))
+        while not (isinstance(mode.difficulty, int) and mode.difficulty in levels):
+            difficultyString = mode.getUserInput("Enter difficulty level from 1-5.")
+            if difficultyString == None:
+                return
+            try:
+                mode.difficulty = int(difficultyString)
+            except:
+                continue
         for i in range(mode.players):
             gameboard = mode.gameboards[i]
             gameboard.setDifficulty(mode.difficulty)
@@ -101,7 +126,6 @@ class singleMode(Mode):
         while mode.midi == None or not mode.midi.endswith('.mid'):
             mode.midi = mode.getUserInput("Enter midi file's path.")
             if mode.midi == None:
-                # mode.app.setActiveMode(mode.app.homeMode)
                 return
         pygame.init()
         pygame.mixer.music.load(mode.midi)
@@ -283,7 +307,7 @@ class singleMode(Mode):
     def drawStats(mode, canvas, gameboard):
         mode.boxWidth, mode.boxHeight = 150, mode.buttonHeight * 5
         x0 = gameboard.offset + gameboard.width - mode.boxWidth + 10
-        x1 = gameboard.offset + gameboard.width - mode.boxWidth
+        x1 = gameboard.offset + gameboard.width
         y0 = mode.buttonHeight
         y1 = y0 + mode.boxHeight
         canvas.create_rectangle(x0, y0, x1, y1, fill='yellow')
