@@ -25,7 +25,7 @@ class singleMode(Mode):
             return
         mode.initGameboards(mode.players)
         mode.initMusic()
-        if mode.midi == None:
+        if mode.midi == None or not mode.partsSet:
             return
         mode.initDifficulty()
         if mode.difficulty == None:
@@ -122,13 +122,19 @@ class singleMode(Mode):
         mode.releaseWaitTime = 0.1
 
     def loadMusic(mode):
+        pygame.init()
         mode.midi = None
-        while mode.midi == None or not mode.midi.endswith('.mid'):
+        musicSet = False
+        while mode.midi == None or not musicSet:
             mode.midi = mode.getUserInput("Enter midi file's path.")
             if mode.midi == None:
                 return
-        pygame.init()
-        pygame.mixer.music.load(mode.midi)
+            try:
+                pygame.mixer.music.load(mode.midi)
+                musicSet = True
+            except:
+                musicSet = False
+                continue
 
     # extract necessary info from midi file using music21
     def getScoreInfo(mode):
@@ -147,32 +153,38 @@ class singleMode(Mode):
     # select music part
     def getScorePart(mode):
         parts = mode.musicScore.parts
+        mode.partsSet = False
         for i in range(len(parts)):
             part = parts[i]
             if part.partName == None:
                 print(f'{i}: This part has no name.')
             else:
                 print(f'{i}: {part.partName}')
-        validEntry = False
-        while not validEntry:
+        
+        invalid = False
+
+        while not mode.partsSet:
+            inputString = mode.getUserInput('Enter part numbers separated by a comma.')
+            if inputString == None:
+                return
             try:
-                inputString = mode.getUserInput('Enter part numbers separated by a comma.')
-                if inputString == None:
-                    mode.app.setActiveMode(mode.app.homeMode)
                 inputList = inputString.split(',')
                 partIndices = []
                 for elem in inputList:
                     partIndex = int(elem)
                     if 0 <= partIndex < len(parts) and partIndex not in partIndices:
                         partIndices.append(partIndex)
+                        print(partIndices)
                     else:
-                        break
-                validEntry = True
+                        invalid = True
             except:
                 continue
+            if not invalid:
+                mode.partsSet = True
         mode.partsNotes = []
         for index in partIndices:
             mode.partsNotes.append(parts[index].flat)
+        mode.partsSet = True
 
     def keyPressed(mode, event):
         if event.key in mode.keyReleasedTimes:

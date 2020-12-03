@@ -36,7 +36,6 @@ class multiMode(Mode):
             x0, x1 = mode.buttonCoordinates[i]
             y0, y1 = mode.by0, mode.by1
             canvas.create_rectangle(x0, y0, x1, y1, fill='white')
-            print(x0, x1, y0, y1)
             textX, textY = (x0 + x1) / 2, (y0 + y1) / 2
             canvas.create_text(textX, textY, text=mode.buttonLabels[i])
 
