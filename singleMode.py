@@ -50,8 +50,8 @@ class singleMode(Mode):
 
     def getNumberOfPlayers(mode):
         mode.players = None
-        while not (isinstance(mode.players, int) and 1 <= mode.players <= 2):
-            playersString = mode.getUserInput("Enter number of players (1 or 2).")
+        while not (isinstance(mode.players, int) and 1 <= mode.players <= 3):
+            playersString = mode.getUserInput("Enter number of players (1-3).")
             if playersString == None:
                 return
             try:
@@ -63,7 +63,8 @@ class singleMode(Mode):
         keyDicts = []
         keyDict0 = {'1': 0, '2': 1, '3': 2, '4': 3, '5': 4}
         keyDict1 = {'6': 0, '7': 1, '8': 2, '9': 3, '0': 4}
-        keyDicts.extend([keyDict0, keyDict1])
+        keyDict2 = {'z': 0, 'x': 1, 'c': 2, 'v': 3, 'b': 4}
+        keyDicts.extend([keyDict0, keyDict1, keyDict2])
         mode.gameboards = []
         for i in range(mode.players):
             newBoard = Gameboard()
@@ -174,7 +175,6 @@ class singleMode(Mode):
                     partIndex = int(elem)
                     if 0 <= partIndex < len(parts) and partIndex not in partIndices:
                         partIndices.append(partIndex)
-                        print(partIndices)
                     else:
                         invalid = True
             except:
@@ -254,8 +254,8 @@ class singleMode(Mode):
         targetsDict = gameboard.targetsDict
         for col in targetsDict:
             for target in targetsDict[col]:
-                x0 = target.x + gameboard.targetSideMargin + gameboard.offset
-                x1 = x0 + gameboard.colWidth - 2 * gameboard.targetSideMargin
+                x0 = target.x + gameboard.pieceSideMargin + gameboard.offset
+                x1 = x0 + gameboard.colWidth - 2 * gameboard.pieceSideMargin
                 y0 = target.y0 + gameboard.scrollY
                 y1 = target.y1 + gameboard.scrollY
                 if y1 > gameboard.height or y0 < 0:
@@ -267,7 +267,7 @@ class singleMode(Mode):
                     target.color = 'white'
                 if y1 > gameboard.lineY and not target.pressed and target.color != 'red':
                     target.color = 'red'
-                    gameboard.missedTargets += 1
+                    gameboard.missedTargets += 1 # FIX THIS IT'S NOT WORKING
                 canvas.create_rectangle(x0, y0, x1, y1, fill=target.color)
                 textX, textY = (x0 + x1) / 2, (y0 + y1) / 2
                 canvas.create_text(textX, textY, text=str(pitch))
@@ -276,8 +276,8 @@ class singleMode(Mode):
         tokensDict = gameboard.tokensDict
         for col in tokensDict:
             for token in tokensDict[col]:
-                x0 = token.x + gameboard.tokenSideMargin + gameboard.offset
-                x1 = x0 + gameboard.colWidth - 2 * gameboard.tokenSideMargin
+                x0 = token.x + gameboard.pieceSideMargin + gameboard.offset
+                x1 = x0 + gameboard.colWidth - 2 * gameboard.pieceSideMargin
                 y0 = token.y0 + gameboard.scrollY
                 y1 = token.y1 + gameboard.scrollY
                 if y1 > gameboard.height or y0 < 0:
@@ -292,8 +292,8 @@ class singleMode(Mode):
         obstaclesDict = gameboard.obstaclesDict
         for col in obstaclesDict:
             for obstacle in gameboard.obstaclesDict[col]:
-                x0 = obstacle.x + gameboard.obstacleSideMargin + gameboard.offset
-                x1 = x0 + gameboard.colWidth - 2 * gameboard.obstacleSideMargin
+                x0 = obstacle.x + gameboard.pieceSideMargin + gameboard.offset
+                x1 = x0 + gameboard.colWidth - 2 * gameboard.pieceSideMargin
                 y0 = obstacle.y0 + gameboard.scrollY
                 y1 = obstacle.y1 + gameboard.scrollY
                 if y1 > gameboard.height or y0 < 0:
@@ -317,7 +317,7 @@ class singleMode(Mode):
                 canvas.create_rectangle(x0, y0, x1, y1, fill='gray')
 
     def drawStats(mode, canvas, gameboard):
-        mode.boxWidth, mode.boxHeight = 150, mode.buttonHeight * 5
+        mode.boxWidth, mode.boxHeight = 125, mode.buttonHeight * 5
         x0 = gameboard.offset + gameboard.width - mode.boxWidth + 10
         x1 = gameboard.offset + gameboard.width
         y0 = mode.buttonHeight
@@ -326,7 +326,7 @@ class singleMode(Mode):
         canvas.create_text(x0, y0, text=f'Targets Hit: {gameboard.targetsHit}', anchor='nw')
         canvas.create_text(x0, y0 + mode.buttonHeight, text=f'Tokens: {gameboard.tokensCollected}', anchor='nw')
         canvas.create_text(x0, y0 + mode.buttonHeight * 2, text=f'Obstacles: {gameboard.obstaclesHit}', anchor='nw')
-        canvas.create_text(x0, y0 + mode.buttonHeight * 3, text=f'Missed targets: {gameboard.missedTargets}', anchor='nw')
+        canvas.create_text(x0, y0 + mode.buttonHeight * 3, text=f'Missed: {gameboard.missedTargets}', anchor='nw')
         canvas.create_text(x0, y0 + mode.buttonHeight * 4, text=f'No hits: {gameboard.noHits}', anchor='nw')
 
     def drawButtons(mode, canvas):

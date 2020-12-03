@@ -15,7 +15,7 @@ class Gameboard(object):
         self.bottomMargin = 100
         self.lineY = self.height - self.bottomMargin
         self.cols = 5
-        self.colWidth = 100
+        self.colWidth = self.width / self.cols
         self.beatLength = 100
 
     def setDifficulty(self, difficulty):
@@ -31,13 +31,9 @@ class Gameboard(object):
         self.scrollY = self.dy * dt * 100
     
     def initGamePieceDimensions(self):
-        self.tokenTopMargin = 20
-        self.tokenSideMargin = 30
+        self.pieceTopMargin = 20
+        self.pieceSideMargin = self.colWidth / 8
         self.targetLength = 100
-        self.targetTopMargin = 20
-        self.targetSideMargin = 30
-        self.obstacleTopMargin = 20
-        self.obstacleSideMargin = 30
         self.tokenLength = 50
 
     def initGamePieces(self, partsNotes):
@@ -72,7 +68,7 @@ class Gameboard(object):
                 for elem in notes:
                     elemDuration = elem.duration.quarterLength
                     y0 = self.lineY - elemOffset * self.beatLength
-                    y1 = y0 - elemDuration * self.targetLength - self.targetTopMargin
+                    y1 = y0 - elemDuration * self.targetLength - self.pieceTopMargin
                     while y1 > y0:
                         y1 -= 1
                     if y1 < self.minY:
@@ -96,8 +92,8 @@ class Gameboard(object):
         count = 0
         while count < self.totalTokens:
             col = random.randint(0, self.cols - 1)
-            y1 = random.randint(int(self.minY), self.lineY - self.tokenLength) + self.tokenTopMargin
-            y0 = y1 + self.tokenLength - self.tokenTopMargin
+            y1 = random.randint(int(self.minY), self.lineY - self.tokenLength) + self.pieceTopMargin
+            y0 = y1 + self.tokenLength - self.pieceTopMargin
             x = col * self.colWidth
             # if (self.placeValid(col, y0, y1, self.tokensDict) and
             #     self.placeValid(col, y0, y1, self.targetsDict)):
