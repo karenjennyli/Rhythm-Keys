@@ -4,6 +4,7 @@ import pygame, time, random
 import homeMode, multiMode, createMode, scoreMode
 from gamePieces import Target, Token, Obstacle
 from Gameboard import Gameboard
+from Score import Score
 
 class singleMode(Mode):
     def appStarted(mode):
@@ -12,6 +13,7 @@ class singleMode(Mode):
         mode.playing = False
         mode.gameOver = False
         mode.timerDelay = 1
+        mode.displayEndScores = False
         mode.initKeysHeld()
         mode.initButtonDimensions()
         mode.getNumberOfPlayers()
@@ -228,6 +230,20 @@ class singleMode(Mode):
         if mode.playing and mode.gameboards[0].minY + mode.gameboards[0].scrollY >= mode.gameboards[0].height:
             mode.playing = False
             mode.gameOver = True
+            for gameboard in mode.gameboards:
+                gameboard.keysDisabled = False
+            mode.displayEndScores = True
+            mode.addScore()
+
+    def addScore(mode):
+        for i in range(len(mode.gameboards)):
+            player = mode.getUserInput(f"Enter player {i + 1}'s name if you want to get added to the scoreboard.")
+            if player == None:
+                return
+            gameboard = mode.gameboards[i]
+            song = mode.midi.split('/')[-1]
+            song = song.split('.')[0]
+            newScore = Score(player, gameboard.score, song, mode.difficulty)
 
     def checkDisabledBoards(mode):
         currentTime = time.time()
@@ -345,7 +361,7 @@ class singleMode(Mode):
                 canvas.create_rectangle(x0, y0, x1, y1, fill=color)
     
     def drawAttackMessages(mode, canvas, gameboard):
-        if gameboard.keysDisabled:
+        if gameboard.keysDisabled and mode.playing:
             x0 = gameboard.offset
             x1 = x0 + gameboard.width
             y0 = gameboard.lineY
@@ -354,7 +370,10 @@ class singleMode(Mode):
             textX = (2 * gameboard.offset + gameboard.width) / 2
             textY = (gameboard.lineY + gameboard.height) / 2
             timeLeft = int(mode.disabledTime - (time.time() - gameboard.disabledStartTime)) + 1
-            canvas.create_text(textX, textY, text=f'Keys disabled for {timeLeft} more seconds!')
+            if timeLeft == 1:
+                canvas.create_text(textX, textY, text=f'Keys disabled for {timeLeft} more second!')
+            else:
+                canvas.create_text(textX, textY, text=f'Keys disabled for {timeLeft} more seconds!')
 
     def drawStrikeLine(mode, canvas, gameboard):
         canvas.create_line(gameboard.offset, gameboard.lineY, gameboard.width + gameboard.offset, gameboard.lineY,
@@ -375,7 +394,7 @@ class singleMode(Mode):
 
     def drawStats(mode, canvas, gameboard):
         mode.boxWidth, mode.boxHeight = 125, mode.buttonHeight * 6
-        x0 = gameboard.offset + gameboard.width - mode.boxWidth + 10
+        x0 = gameboard.offset + gameboard.width - mode.boxWidth
         x1 = gameboard.offset + gameboard.width
         y0 = mode.buttonHeight
         y1 = y0 + mode.boxHeight
@@ -386,6 +405,25 @@ class singleMode(Mode):
         canvas.create_text(x0, y0 + mode.buttonHeight * 3, text=f'Obstacles: {gameboard.obstaclesHit}', anchor='nw')
         canvas.create_text(x0, y0 + mode.buttonHeight * 4, text=f'Missed: {gameboard.missedTargets}', anchor='nw')
         canvas.create_text(x0, y0 + mode.buttonHeight * 5, text=f'No hits: {gameboard.noHits}', anchor='nw')
+
+    def drawEndScores(mode, canvas):
+        # print(Score.scoreboard)
+        for i in range(len(mode.gameboards)):
+            gameboard = mode.gameboards[i]
+            mode.boxWidth, mode.boxHeight = gameboard.width * 3 / 4, gameboard.height / 5
+            x0 = (2 * gameboard.offset + gameboard.width) / 2 - mode.boxWidth / 2
+            x1 = x0 + mode.boxWidth
+            y0 = gameboard.height / 2 - mode.boxHeight / 2
+            y1 = y0 + mode.boxHeight
+            canvas.create_rectangle(x0, y0, x1, y1, fill='yellow')
+            textX = (x0 + x1) / 2
+            textY = gameboard.height / 2
+            if mode.players == 1:
+                canvas.create_text(textX, textY, text='Final score is:')
+                canvas.create_text(textY, textY + 20, text=f'{gameboard.score}')
+            else:
+                canvas.create_text(textX, textY, text=f"Player {i + 1}'s score is:")
+                canvas.create_text(textX, textY + 20, text=f'{gameboard.score}')
 
     def drawButtons(mode, canvas):
         for i in range(mode.numberOfButtons):
@@ -398,4 +436,6 @@ class singleMode(Mode):
     def redrawAll(mode, canvas):
         if mode.readyToPlay:
             mode.drawGameboards(canvas)
+        if mode.displayEndScores:
+            mode.drawEndScores(canvas)
         mode.drawButtons(canvas)

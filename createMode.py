@@ -15,7 +15,6 @@ class createMode(Mode):
             x1 = x0 + mode.buttonWidth
             mode.buttonCoordinates.append((x0, x1))
         mode.buttonLabels = ['Home', 'Single', 'Multi', 'Create', 'Score']
-        print(mode.buttonCoordinates)
 
     def keyPressed(mode, event):
         pass
