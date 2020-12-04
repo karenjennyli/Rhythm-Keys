@@ -68,7 +68,7 @@ class Gameboard(object):
         self.totalObstacles = self.totalTargets // 10
         self.initObstacles()
         if self.players > 1:
-            self.totalAttacks = 100
+            self.totalAttacks = 5
             self.initAttacks()
         
     def initTargets(self, partsNotes):
