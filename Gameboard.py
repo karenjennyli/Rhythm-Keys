@@ -2,12 +2,29 @@ from music21 import *
 import random
 from gamePieces import Target, Token, Obstacle, Attack
 
+import decimal
+def roundHalfUp(d):
+    # Round to nearest with ties going away from zero.
+    rounding = decimal.ROUND_HALF_UP
+    # See other rounding options here:
+    # https://docs.python.org/3/library/decimal.html#rounding-modes
+    return int(decimal.Decimal(d).to_integral_value(rounding=rounding))
+
 class Gameboard(object):
     def __init__(self, players):
-        self.score = 100
+        self.score = 0
         self.players = players
         self.keysDisabled = False
         self.disabledStartTime = None
+
+    def calculateScore(self):
+        # tokens count as 5 targets hit
+        # obstacles and miss hits decrease targets hit calculation by one each
+        fraction = (self.targetsHit - self.noHits - self.obstaclesHit - self.missedTargets + 5 * self.tokensCollected) / self.totalTargets
+        if fraction < 0:
+            self.score = 0
+        else:
+            self.score = roundHalfUp(fraction * 10000)
 
     def setKeysDict(self, keysDict):
         self.keysDict = keysDict
@@ -162,15 +179,24 @@ class Gameboard(object):
         hitTarget = self.checkPressedPiece(self.targetsDict[col], y0, y1)
         hitToken = self.checkPressedPiece(self.tokensDict[col], y0, y1)
         hitObstacle = self.checkPressedPiece(self.obstaclesDict[col], y0, y1)
-        if hitTarget:   self.targetsHit += 1
-        else:           self.noHits += 1
-        if hitToken:    self.tokensCollected += 1
-        if hitObstacle: self.obstaclesHit += 1
+        if self.players > 1:
+            hitAttack = self.checkPressedPiece(self.attacksDict[col], y0, y1)
+        else:
+            hitAttack = False
+        if hitTarget:
+            self.targetsHit += 1
+        if hitToken:
+            self.tokensCollected += 1
+        if hitObstacle:
+            self.obstaclesHit += 1
+        if not (hitTarget or hitToken or hitObstacle or hitAttack):
+            self.noHits += 1
+        return hitAttack
 
-    def checkPressedAttack(self, col):
-        y0 = self.lineY
-        y1 = self.lineY - self.smallestLength
-        return self.checkPressedPiece(self.attacksDict[col], y0, y1)
+    # def checkPressedAttack(self, col):
+    #     y0 = self.lineY
+    #     y1 = self.lineY - self.smallestLength
+    #     return self.checkPressedPiece(self.attacksDict[col], y0, y1)
 
     def checkPressedPiece(self, colList, y0, y1):
         hitPiece = False

@@ -5,19 +5,12 @@ import homeMode, multiMode, createMode, scoreMode
 from gamePieces import Target, Token, Obstacle
 from Gameboard import Gameboard
 
-import decimal
-def roundHalfUp(d):
-    # Round to nearest with ties going away from zero.
-    rounding = decimal.ROUND_HALF_UP
-    # See other rounding options here:
-    # https://docs.python.org/3/library/decimal.html#rounding-modes
-    return int(decimal.Decimal(d).to_integral_value(rounding=rounding))
-
 class singleMode(Mode):
     def appStarted(mode):
         mode.activated = True
         mode.readyToPlay = False
         mode.playing = False
+        mode.gameOver = False
         mode.timerDelay = 1
         mode.initKeysHeld()
         mode.initButtonDimensions()
@@ -206,8 +199,8 @@ class singleMode(Mode):
             gameboard = mode.gameboards[i]
             if event.key in gameboard.keysDict and not gameboard.keysDisabled:
                 col = gameboard.keysDict[event.key]
-                gameboard.checkAllPressedPieces(col)
-                if mode.players > 1 and gameboard.checkPressedAttack(col):
+                hitAttack = gameboard.checkAllPressedPieces(col)
+                if mode.players > 1 and hitAttack:
                     attackersIndices.add(i)
         if mode.players > 1 and attackersIndices != set():
             mode.disableKeysAttack(attackersIndices)
@@ -228,10 +221,13 @@ class singleMode(Mode):
         mode.checkKeys()
         if mode.readyToPlay and mode.playing:
             mode.scroll()
-        if mode.playing and mode.players > 1:
-            mode.checkDisabledBoards()
+            if mode.players > 1:
+                mode.checkDisabledBoards()
+            for gameboard in mode.gameboards:
+                gameboard.calculateScore()
         if mode.playing and mode.gameboards[0].minY + mode.gameboards[0].scrollY >= mode.gameboards[0].height:
             mode.playing = False
+            mode.gameOver = True
 
     def checkDisabledBoards(mode):
         currentTime = time.time()
@@ -378,17 +374,18 @@ class singleMode(Mode):
                 canvas.create_rectangle(x0, y0, x1, y1, fill='gray')
 
     def drawStats(mode, canvas, gameboard):
-        mode.boxWidth, mode.boxHeight = 125, mode.buttonHeight * 5
+        mode.boxWidth, mode.boxHeight = 125, mode.buttonHeight * 6
         x0 = gameboard.offset + gameboard.width - mode.boxWidth + 10
         x1 = gameboard.offset + gameboard.width
         y0 = mode.buttonHeight
         y1 = y0 + mode.boxHeight
         canvas.create_rectangle(x0, y0, x1, y1, fill='yellow')
-        canvas.create_text(x0, y0, text=f'Targets Hit: {gameboard.targetsHit}', anchor='nw')
-        canvas.create_text(x0, y0 + mode.buttonHeight, text=f'Tokens: {gameboard.tokensCollected}', anchor='nw')
-        canvas.create_text(x0, y0 + mode.buttonHeight * 2, text=f'Obstacles: {gameboard.obstaclesHit}', anchor='nw')
-        canvas.create_text(x0, y0 + mode.buttonHeight * 3, text=f'Missed: {gameboard.missedTargets}', anchor='nw')
-        canvas.create_text(x0, y0 + mode.buttonHeight * 4, text=f'No hits: {gameboard.noHits}', anchor='nw')
+        canvas.create_text(x0, y0, text=f'Score: {gameboard.score}', anchor='nw')
+        canvas.create_text(x0, y0 + mode.buttonHeight, text=f'Targets Hit: {gameboard.targetsHit}', anchor='nw')
+        canvas.create_text(x0, y0 + mode.buttonHeight * 2, text=f'Tokens: {gameboard.tokensCollected}', anchor='nw')
+        canvas.create_text(x0, y0 + mode.buttonHeight * 3, text=f'Obstacles: {gameboard.obstaclesHit}', anchor='nw')
+        canvas.create_text(x0, y0 + mode.buttonHeight * 4, text=f'Missed: {gameboard.missedTargets}', anchor='nw')
+        canvas.create_text(x0, y0 + mode.buttonHeight * 5, text=f'No hits: {gameboard.noHits}', anchor='nw')
 
     def drawButtons(mode, canvas):
         for i in range(mode.numberOfButtons):
