@@ -306,8 +306,11 @@ class singleMode(Mode):
         canvas.create_line(gameboard.offset, gameboard.lineY, gameboard.width + gameboard.offset, gameboard.lineY,
                         width=5)
         for key in gameboard.keysDict:
+            col = gameboard.keysDict[key]
+            keyX = (col + 1 / 2) * gameboard.colWidth + gameboard.offset
+            keyY = (gameboard.lineY + gameboard.height) / 2
+            canvas.create_text(keyX, keyY, text=key)
             if key in mode.keysHeld:
-                col = gameboard.keysDict[key]
                 x0 = col * gameboard.colWidth + gameboard.offset
                 x1 = x0 + gameboard.colWidth
                 y0 = gameboard.lineY - gameboard.smallestLength
