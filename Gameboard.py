@@ -1,10 +1,11 @@
 from music21 import *
 import random
-from gamePieces import Target, Token, Obstacle
+from gamePieces import Target, Token, Obstacle, Attack
 
 class Gameboard(object):
-    def __init__(self):
+    def __init__(self, players):
         self.score = 100
+        self.players = players
 
     def setKeysDict(self, keysDict):
         self.keysDict = keysDict
@@ -47,9 +48,11 @@ class Gameboard(object):
         self.initTokens()
         self.totalObstacles = self.totalTargets // 10
         self.initObstacles()
+        if self.players > 1:
+            self.totalAttacks = 100
+            self.initAttacks()
         
     def initTargets(self, partsNotes):
-        print('Setting targets...', end='')
         self.totalTargets = 0
         self.smallestLength = self.targetLength
         self.minY = 0
@@ -82,10 +85,8 @@ class Gameboard(object):
                         newTarget = Target(col, False, x, y0, y1, elemMidi)
                         self.targetsDict[col].append(newTarget)
                         self.totalTargets += 1
-        print('Finished!')
 
     def initTokens(self):
-        print('Setting tokens...', end='')
         self.tokensDict = dict()
         for i in range(self.cols):
             self.tokensDict[i] = []
@@ -101,10 +102,8 @@ class Gameboard(object):
                 newToken = Token(col, False, x, y0, y1)
                 self.tokensDict[col].append(newToken)
                 count += 1
-        print('Finished!')
     
     def initObstacles(self):
-        print('Setting obstacles...', end='')
         self.obstaclesDict = dict()
         for i in range(self.cols):
             self.obstaclesDict[i] = []
@@ -120,7 +119,23 @@ class Gameboard(object):
             newObstacle = Obstacle(col, False, x, y0, y1)
             self.obstaclesDict[col].append(newObstacle)
             count += 1
-        print('Finished!')
+    
+    def initAttacks(self):
+        self.keysDisabled = False
+        self.attacksDict = dict()
+        for i in range(self.cols):
+            self.attacksDict[i] = []
+        count = 0
+        while count < self.totalAttacks:
+            col = random.randint(0, self.cols - 1)
+            y1 = random.randint(int(self.minY), self.lineY - self.tokenLength) + self.pieceTopMargin
+            y0 = y1 + self.tokenLength - self.pieceTopMargin
+            x = col * self.colWidth
+            if (self.placeValid(col, y0, y1, self.attacksDict) and
+                self.placeValid(col, y0, y1, self.tokensDict)):
+                newAttack = Attack(col, False, x, y0, y1)
+                self.attacksDict[col].append(newAttack)
+                count += 1
 
     def placeValid(self, col, y0, y1, piecesDict):
         colsList = [i for i in range(self.cols)]

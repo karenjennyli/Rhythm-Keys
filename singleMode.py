@@ -15,6 +15,7 @@ def roundHalfUp(d):
 
 class singleMode(Mode):
     def appStarted(mode):
+        mode.activated = True
         mode.readyToPlay = False
         mode.playing = False
         mode.timerDelay = 1
@@ -42,11 +43,12 @@ class singleMode(Mode):
 
     def modeActivated(mode):
         try:
-            pygame.mixer.music.stop()
-            pygame.quit()
+            if mode.activated and mode.playing:
+                pygame.mixer.music.stop()
+                pygame.quit()
         except:
-            pass
-        mode.appStarted()
+            mode.appStarted()
+        # mode.appStarted()
 
     def getNumberOfPlayers(mode):
         mode.players = None
@@ -67,7 +69,7 @@ class singleMode(Mode):
         keyDicts.extend([keyDict0, keyDict1, keyDict2])
         mode.gameboards = []
         for i in range(mode.players):
-            newBoard = Gameboard()
+            newBoard = Gameboard(mode.players)
             newBoard.initBoardDimensions(i, mode.width / mode.players, mode.height)
             newBoard.setKeysDict(keyDicts[i])
             mode.gameboards.append(newBoard)
@@ -244,6 +246,8 @@ class singleMode(Mode):
             mode.drawTargets(canvas, gameboard)
             mode.drawTokens(canvas, gameboard)
             mode.drawObstacles(canvas, gameboard)
+            if mode.players > 1:
+                mode.drawAttacks(canvas, gameboard)
             mode.drawStrikeLine(canvas, gameboard)
             mode.drawStats(canvas, gameboard)
             x = gameboard.offset + gameboard.width
@@ -300,6 +304,22 @@ class singleMode(Mode):
                     color = 'red'
                 else:
                     color = 'black'
+                canvas.create_rectangle(x0, y0, x1, y1, fill=color)
+
+    def drawAttacks(mode, canvas, gameboard):
+        attacksDict = gameboard.attacksDict
+        for col in attacksDict:
+            for attack in attacksDict[col]:
+                x0 = attack.x + gameboard.pieceSideMargin + gameboard.offset
+                x1 = x0 + gameboard.colWidth - 2 * gameboard.pieceSideMargin
+                y0 = attack.y0 + gameboard.scrollY
+                y1 = attack.y1 + gameboard.scrollY
+                if y1 > gameboard.height or y0 < 0:
+                    continue
+                if attack.pressed:
+                    color = 'green'
+                else:
+                    color = 'purple'
                 canvas.create_rectangle(x0, y0, x1, y1, fill=color)
 
     def drawStrikeLine(mode, canvas, gameboard):
