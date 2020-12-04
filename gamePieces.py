@@ -7,6 +7,7 @@ class Target(object):
         self.y0 = y0
         self.y1 = y1
         self.pitch = pitch
+        self.color = 'white'
 
     def __repr__(self):
         return f'{self.col}, ({self.y0}, {self.y1}), {self.pressed}, {self.pitch}'

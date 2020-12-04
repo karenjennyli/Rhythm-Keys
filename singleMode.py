@@ -261,13 +261,11 @@ class singleMode(Mode):
                 if y1 > gameboard.height or y0 < 0:
                     continue
                 pitch = target.pitch
-                if target.pressed:
-                    target.color = 'green'
-                else:
-                    target.color = 'white'
                 if y1 > gameboard.lineY and not target.pressed and target.color != 'red':
                     target.color = 'red'
                     gameboard.missedTargets += 1 # FIX THIS IT'S NOT WORKING
+                elif target.pressed:
+                    target.color = 'green'
                 canvas.create_rectangle(x0, y0, x1, y1, fill=target.color)
                 textX, textY = (x0 + x1) / 2, (y0 + y1) / 2
                 canvas.create_text(textX, textY, text=str(pitch))
