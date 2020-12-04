@@ -38,5 +38,5 @@ class homeMode(Mode):
 
     def redrawAll(mode, canvas):
         canvas.create_text(mode.width / 2, mode.height / 2,
-                           text='Guitar Hero!')
+                           text='Rhythm Keys!')
         mode.drawButtons(canvas)

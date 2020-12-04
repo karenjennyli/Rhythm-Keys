@@ -195,6 +195,9 @@ class singleMode(Mode):
             pygame.mixer.music.play()
             mode.startTime = time.time()
             return
+        
+        if not mode.playing:
+            return
 
         attackersIndices = set()
         for i in range(len(mode.gameboards)):

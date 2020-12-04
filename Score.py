@@ -8,6 +8,7 @@ class Score(object):
         for i in range(len(Score.scoreboard)):
             score = Score.scoreboard[i]
             score.place = i + 1
+            score.attributes[0] = score.place
 
     def __init__(self, player, score, song, difficulty):
         self.player = player
@@ -15,6 +16,7 @@ class Score(object):
         self.song = song
         self.difficulty = difficulty
         self.place = -1
+        self.attributes = [self.place, self.player, self.score, self.difficulty, self.song]
         Score.scoreboard.append(self)
         Score.assignPlaces()
 
