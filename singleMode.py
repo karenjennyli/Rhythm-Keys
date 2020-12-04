@@ -24,8 +24,6 @@ class singleMode(Mode):
         mode.getNumberOfPlayers()
         if mode.players == None:
             return
-        else:
-            mode.disabledTime = 5
         mode.initGameboards(mode.players)
         mode.initMusic()
         if mode.midi == None or not mode.partsSet:
@@ -194,31 +192,14 @@ class singleMode(Mode):
         if event.key in mode.keyReleasedTimes:
             mode.keyReleasedTimes.pop(event.key)
         mode.keysHeld.add(event.key)
-
+        if mode.playing:
+            for gameboard in mode.gameboards:
+                if event.key in gameboard.keysDict:
+                    gameboard.checkAllPressedPieces(gameboard.keysDict[event.key])
         if event.key == 'p' and not mode.playing:
             mode.playing = True
             pygame.mixer.music.play()
             mode.startTime = time.time()
-            return
-
-        attackersIndices = set()
-        for i in range(len(mode.gameboards)):
-            gameboard = mode.gameboards[i]
-            if event.key in gameboard.keysDict and not gameboard.keysDisabled:
-                col = gameboard.keysDict[event.key]
-                gameboard.checkAllPressedPieces(col)
-                if mode.players > 1 and gameboard.checkPressedAttack(col):
-                    attackersIndices.add(i)
-        if mode.players > 1 and attackersIndices != set():
-            mode.disableKeysAttack(attackersIndices)
-
-    def disableKeysAttack(mode, attackersIndices):
-        disabledStartTime = time.time()
-        for i in range(len(mode.gameboards)):
-            if i not in attackersIndices:
-                gameboard = mode.gameboards[i]
-                gameboard.keysDisabled = True
-                gameboard.disabledStartTime = disabledStartTime
 
     def keyReleased(mode, event):
         if event.key in mode.keysHeld:
@@ -228,17 +209,8 @@ class singleMode(Mode):
         mode.checkKeys()
         if mode.readyToPlay and mode.playing:
             mode.scroll()
-        if mode.playing and mode.players > 1:
-            mode.checkDisabledBoards()
         if mode.playing and mode.gameboards[0].minY + mode.gameboards[0].scrollY >= mode.gameboards[0].height:
             mode.playing = False
-
-    def checkDisabledBoards(mode):
-        currentTime = time.time()
-        for gameboard in mode.gameboards:
-            if gameboard.disabledStartTime != None and currentTime - gameboard.disabledStartTime > mode.disabledTime:
-                gameboard.disabledStartTime = None
-                gameboard.keysDisabled = False
 
     def checkKeys(mode):
         releasedKeys = set()
@@ -276,7 +248,6 @@ class singleMode(Mode):
             mode.drawObstacles(canvas, gameboard)
             if mode.players > 1:
                 mode.drawAttacks(canvas, gameboard)
-                mode.drawAttackMessages(canvas, gameboard)
             mode.drawStrikeLine(canvas, gameboard)
             mode.drawStats(canvas, gameboard)
             x = gameboard.offset + gameboard.width
@@ -293,12 +264,15 @@ class singleMode(Mode):
                 y1 = target.y1 + gameboard.scrollY
                 if y1 > gameboard.height or y0 < 0:
                     continue
+                pitch = target.pitch
                 if y1 > gameboard.lineY and not target.pressed and target.color != 'red':
                     target.color = 'red'
                     gameboard.missedTargets += 1 # FIX THIS IT'S NOT WORKING
                 elif target.pressed:
                     target.color = 'green'
                 canvas.create_rectangle(x0, y0, x1, y1, fill=target.color)
+                textX, textY = (x0 + x1) / 2, (y0 + y1) / 2
+                canvas.create_text(textX, textY, text=str(pitch))
 
     def drawTokens(mode, canvas, gameboard):
         tokensDict = gameboard.tokensDict
@@ -347,24 +321,10 @@ class singleMode(Mode):
                 else:
                     color = 'purple'
                 canvas.create_rectangle(x0, y0, x1, y1, fill=color)
-    
-    def drawAttackMessages(mode, canvas, gameboard):
-        if gameboard.keysDisabled:
-            x0 = gameboard.offset
-            x1 = x0 + gameboard.width
-            y0 = gameboard.lineY
-            y1 = mode.height
-            canvas.create_rectangle(x0, y0, x1, y1, fill='yellow')
-            textX = (2 * gameboard.offset + gameboard.width) / 2
-            textY = (gameboard.lineY + gameboard.height) / 2
-            timeLeft = int(mode.disabledTime - (time.time() - gameboard.disabledStartTime)) + 1
-            canvas.create_text(textX, textY, text=f'Keys disabled for {timeLeft} more seconds!')
 
     def drawStrikeLine(mode, canvas, gameboard):
         canvas.create_line(gameboard.offset, gameboard.lineY, gameboard.width + gameboard.offset, gameboard.lineY,
                         width=5)
-        if gameboard.keysDisabled:
-            return
         for key in gameboard.keysDict:
             col = gameboard.keysDict[key]
             keyX = (col + 1 / 2) * gameboard.colWidth + gameboard.offset

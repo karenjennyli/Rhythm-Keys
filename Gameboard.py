@@ -6,8 +6,6 @@ class Gameboard(object):
     def __init__(self, players):
         self.score = 100
         self.players = players
-        self.keysDisabled = False
-        self.disabledStartTime = None
 
     def setKeysDict(self, keysDict):
         self.keysDict = keysDict
@@ -123,6 +121,7 @@ class Gameboard(object):
             count += 1
     
     def initAttacks(self):
+        self.keysDisabled = False
         self.attacksDict = dict()
         for i in range(self.cols):
             self.attacksDict[i] = []
@@ -166,11 +165,6 @@ class Gameboard(object):
         else:           self.noHits += 1
         if hitToken:    self.tokensCollected += 1
         if hitObstacle: self.obstaclesHit += 1
-
-    def checkPressedAttack(self, col):
-        y0 = self.lineY
-        y1 = self.lineY - self.smallestLength
-        return self.checkPressedPiece(self.attacksDict[col], y0, y1)
 
     def checkPressedPiece(self, colList, y0, y1):
         hitPiece = False
