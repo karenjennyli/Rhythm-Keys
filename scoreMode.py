@@ -23,7 +23,7 @@ class ScoreMode(Mode):
 
     def checkPressedButtons(mode, x, y):
         if mode.bx0 < x < mode.bx1 and mode.by0 < y < mode.by1:
-            mode.app.setActiveMode(mode.app.homeMode)
+            mode.app.setActiveMode(mode.app.HomeMode)
 
     def drawButtons(mode, canvas):
         textX, textY = (mode.bx0 + mode.bx1) / 2, (mode.by0 + mode.by1) / 2
