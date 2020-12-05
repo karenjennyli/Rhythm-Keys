@@ -64,4 +64,5 @@ class HomeMode(Mode):
         mode.drawBackground(canvas)
         canvas.create_text(mode.width / 2, mode.height / 2,
                            text='Rhythm Keys!', fill='white')
+        canvas.create_text(mode.width / 2, 100, text='press p to play, s to see scoreboard', fill='white')
         mode.drawButtons(canvas)
