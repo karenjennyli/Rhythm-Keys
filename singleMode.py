@@ -1,15 +1,18 @@
 from cmu_112_graphics import *
 from music21 import *
-import pygame, time, random
-import homeMode, multiMode, createMode, scoreMode
+import pygame, time, random, os
+import homeMode
 from gamePieces import Target, Token, Obstacle
 from Gameboard import Gameboard
 from Score import Score
 
 class singleMode(Mode):
     def appStarted(mode):
+        mode.initBackground()
+        mode.getSongOptions()
         mode.activated = True
         mode.readyToPlay = False
+        mode.displayParts = False
         mode.playing = False
         mode.gameOver = False
         mode.timerDelay = 1
@@ -39,18 +42,12 @@ class singleMode(Mode):
             return
 
     def modeActivated(mode):
-        try:
-            if mode.activated and mode.playing:
-                pygame.mixer.music.stop()
-                pygame.quit()
-        except:
-            mode.appStarted()
-        # mode.appStarted()
+        mode.appStarted()
 
     def getNumberOfPlayers(mode):
         mode.players = None
-        while not (isinstance(mode.players, int) and 1 <= mode.players <= 3):
-            playersString = mode.getUserInput("Enter number of players (1-3).")
+        while not (isinstance(mode.players, int) and 1 <= mode.players <= 4):
+            playersString = mode.getUserInput("Enter number of players (up to 4).")
             if playersString == None:
                 return
             try:
@@ -63,7 +60,8 @@ class singleMode(Mode):
         keyDict0 = {'1': 0, '2': 1, '3': 2, '4': 3, '5': 4}
         keyDict1 = {'6': 0, '7': 1, '8': 2, '9': 3, '0': 4}
         keyDict2 = {'z': 0, 'x': 1, 'c': 2, 'v': 3, 'b': 4}
-        keyDicts.extend([keyDict0, keyDict1, keyDict2])
+        keyDict3 = {'n': 0, 'm': 1, ',': 2, '.': 3, '/': 4}
+        keyDicts.extend([keyDict0, keyDict1, keyDict2, keyDict3])
         mode.gameboards = []
         for i in range(mode.players):
             newBoard = Gameboard(mode.players)
@@ -98,16 +96,13 @@ class singleMode(Mode):
         mode.readyToPlay = True
 
     def initButtonDimensions(mode):
-        mode.numberOfButtons = 5
-        mode.buttonWidth = 60
-        mode.buttonHeight = 30
-        mode.by0, mode.by1 = 0, mode.buttonHeight
-        mode.buttonCoordinates = []
-        for i in range(mode.numberOfButtons):
-            x0 = i * mode.buttonWidth
-            x1 = x0 + mode.buttonWidth
-            mode.buttonCoordinates.append((x0, x1))
-        mode.buttonLabels = ['Home', 'Single', 'Multi', 'Create', 'Score']
+        mode.buttonWidth = mode.buttonHeight = 40
+        mode.bx0 = 10
+        mode.bx1 = mode.bx0 + mode.buttonWidth
+        mode.by0 = 10
+        mode.by1 = mode.by0 + mode.buttonHeight
+        # https://www.flaticon.com/
+        mode.homeButton = mode.loadImage("home.png")
 
     def initMusic(mode):
         mode.loadMusic()
@@ -125,16 +120,27 @@ class singleMode(Mode):
         pygame.init()
         mode.midi = None
         musicSet = False
-        while mode.midi == None or not musicSet:
-            mode.midi = mode.getUserInput("Enter midi file's path.")
-            if mode.midi == None:
+        # while mode.midi == None or not musicSet:
+        #     mode.midi = mode.getUserInput("Enter midi file's path.")
+        #     if mode.midi == None:
+        #         return
+        #     try:
+        #         pygame.mixer.music.load(mode.midi)
+        #         musicSet = True
+        #     except:
+        #         musicSet = False
+        #         continue
+        index = None
+        while index == None or index not in range(len(mode.filesInFolder)):
+            inputString = mode.getUserInput("Enter song number.")
+            if inputString == None:
                 return
             try:
-                pygame.mixer.music.load(mode.midi)
-                musicSet = True
+                index = int(inputString)
             except:
-                musicSet = False
                 continue
+        mode.midi = 'music/' + mode.filesInFolder[index]
+        pygame.mixer.music.load(mode.midi)
 
     # extract necessary info from midi file using music21
     def getScoreInfo(mode):
@@ -152,18 +158,12 @@ class singleMode(Mode):
 
     # select music part
     def getScorePart(mode):
-        parts = mode.musicScore.parts
+        mode.parts = mode.musicScore.parts
         mode.partsSet = False
-        for i in range(len(parts)):
-            part = parts[i]
-            if part.partName == None:
-                print(f'{i}: This part has no name.')
-            else:
-                print(f'{i}: {part.partName}')
-        
+        mode.displayParts = True
         invalid = False
-
         while not mode.partsSet:
+            invalid = False
             inputString = mode.getUserInput('Enter part numbers separated by a comma.')
             if inputString == None:
                 return
@@ -172,8 +172,9 @@ class singleMode(Mode):
                 partIndices = []
                 for elem in inputList:
                     partIndex = int(elem)
-                    if 0 <= partIndex < len(parts) and partIndex not in partIndices:
+                    if 0 <= partIndex < len(mode.parts) and partIndex not in partIndices:
                         partIndices.append(partIndex)
+
                     else:
                         invalid = True
             except:
@@ -182,23 +183,20 @@ class singleMode(Mode):
                 mode.partsSet = True
         mode.partsNotes = []
         for index in partIndices:
-            mode.partsNotes.append(parts[index].flat)
+            mode.partsNotes.append(mode.parts[index].flat)
         mode.partsSet = True
 
     def keyPressed(mode, event):
         if event.key in mode.keyReleasedTimes:
             mode.keyReleasedTimes.pop(event.key)
         mode.keysHeld.add(event.key)
-
-        if event.key == 'p' and not mode.playing:
+        if event.key == 'p' and not mode.playing and mode.readyToPlay:
             mode.playing = True
             pygame.mixer.music.play()
             mode.startTime = time.time()
             return
-        
         if not mode.playing:
             return
-
         attackersIndices = set()
         for i in range(len(mode.gameboards)):
             gameboard = mode.gameboards[i]
@@ -274,15 +272,8 @@ class singleMode(Mode):
         mode.checkPressedButtons(x, y)
         
     def checkPressedButtons(mode, x, y):
-        mode.modesList = [mode.app.homeMode, mode.app.singleMode, mode.app.multiMode, mode.app.createMode, mode.app.scoreMode]
-        y0, y1 = mode.by0, mode.by1
-        for i in range(mode.numberOfButtons):
-            x0, x1 = mode.buttonCoordinates[i]
-            if x0 < x < x1 and y0 < y < y1:
-                if i == 1:
-                    mode.appStarted()
-                    return
-                mode.app.setActiveMode(mode.modesList[i])
+        if mode.bx0 < x < mode.bx1 and mode.by0 < y < mode.by1:
+            mode.app.setActiveMode(mode.app.homeMode)
 
     def drawGameboards(mode, canvas):
         for gameboard in mode.gameboards:
@@ -296,7 +287,7 @@ class singleMode(Mode):
             mode.drawStats(canvas, gameboard)
             x = gameboard.offset + gameboard.width
             y0, y1 = 0, mode.height
-            canvas.create_line(x, y0, x, y1)
+            canvas.create_line(x, y0, x, y1, fill='white', width=4)
 
     def drawTargets(mode, canvas, gameboard):
         targetsDict = gameboard.targetsDict
@@ -313,7 +304,7 @@ class singleMode(Mode):
                     gameboard.missedTargets += 1 # FIX THIS IT'S NOT WORKING
                 elif target.pressed:
                     target.color = 'green'
-                canvas.create_rectangle(x0, y0, x1, y1, fill=target.color)
+                canvas.create_rectangle(x0, y0, x1, y1, outline=target.color, width=4, fill='black')
 
     def drawTokens(mode, canvas, gameboard):
         tokensDict = gameboard.tokensDict
@@ -329,7 +320,7 @@ class singleMode(Mode):
                     color = 'green'
                 else:
                     color = 'gold'
-                canvas.create_rectangle(x0, y0, x1, y1, fill=color)
+                canvas.create_rectangle(x0, y0, x1, y1, outline=color, width=4, fill='black')
 
     def drawObstacles(mode, canvas, gameboard):
         obstaclesDict = gameboard.obstaclesDict
@@ -345,7 +336,7 @@ class singleMode(Mode):
                     color = 'red'
                 else:
                     color = 'black'
-                canvas.create_rectangle(x0, y0, x1, y1, fill=color)
+                canvas.create_rectangle(x0, y0, x1, y1, outline='red', width=4, fill='black')
 
     def drawAttacks(mode, canvas, gameboard):
         attacksDict = gameboard.attacksDict
@@ -361,7 +352,7 @@ class singleMode(Mode):
                     color = 'green'
                 else:
                     color = 'purple'
-                canvas.create_rectangle(x0, y0, x1, y1, fill=color)
+                canvas.create_rectangle(x0, y0, x1, y1, outline=color, width=4, fill='black')
     
     def drawAttackMessages(mode, canvas, gameboard):
         if gameboard.keysDisabled and mode.playing:
@@ -369,76 +360,123 @@ class singleMode(Mode):
             x1 = x0 + gameboard.width
             y0 = gameboard.lineY
             y1 = mode.height
-            canvas.create_rectangle(x0, y0, x1, y1, fill='yellow')
+            canvas.create_rectangle(x0, y0, x1, y1, fill='black')
             textX = (2 * gameboard.offset + gameboard.width) / 2
             textY = (gameboard.lineY + gameboard.height) / 2
             timeLeft = int(mode.disabledTime - (time.time() - gameboard.disabledStartTime)) + 1
             if timeLeft == 1:
-                canvas.create_text(textX, textY, text=f'Keys disabled for {timeLeft} more second!')
+                canvas.create_text(textX, textY, text=f'Keys disabled for {timeLeft} more second!', fill='white')
             else:
-                canvas.create_text(textX, textY, text=f'Keys disabled for {timeLeft} more seconds!')
+                canvas.create_text(textX, textY, text=f'Keys disabled for {timeLeft} more seconds!', fill='white')
 
     def drawStrikeLine(mode, canvas, gameboard):
         canvas.create_line(gameboard.offset, gameboard.lineY, gameboard.width + gameboard.offset, gameboard.lineY,
-                        width=5)
+                        width=4, fill='white')
         if gameboard.keysDisabled:
             return
         for key in gameboard.keysDict:
             col = gameboard.keysDict[key]
             keyX = (col + 1 / 2) * gameboard.colWidth + gameboard.offset
             keyY = (gameboard.lineY + gameboard.height) / 2
-            canvas.create_text(keyX, keyY, text=key)
+            canvas.create_text(keyX, keyY, text=key, fill='white', font='System 18 bold')
             if key in mode.keysHeld:
                 x0 = col * gameboard.colWidth + gameboard.offset
                 x1 = x0 + gameboard.colWidth
                 y0 = gameboard.lineY - gameboard.smallestLength
                 y1 = gameboard.lineY
-                canvas.create_rectangle(x0, y0, x1, y1, fill='gray')
+                canvas.create_rectangle(x0, y0, x1, y1, fill='blue', outline='blue')
 
     def drawStats(mode, canvas, gameboard):
-        mode.boxWidth, mode.boxHeight = 125, mode.buttonHeight * 6
-        x0 = gameboard.offset + gameboard.width - mode.boxWidth
+        intervalY = 25
+        boxWidth, boxHeight = 150, intervalY * 6 + 5
+        x0 = gameboard.offset + gameboard.width - boxWidth
         x1 = gameboard.offset + gameboard.width
-        y0 = mode.buttonHeight
-        y1 = y0 + mode.boxHeight
-        canvas.create_rectangle(x0, y0, x1, y1, fill='yellow')
-        canvas.create_text(x0, y0, text=f'Score: {gameboard.score}', anchor='nw')
-        canvas.create_text(x0, y0 + mode.buttonHeight, text=f'Targets Hit: {gameboard.targetsHit}', anchor='nw')
-        canvas.create_text(x0, y0 + mode.buttonHeight * 2, text=f'Tokens: {gameboard.tokensCollected}', anchor='nw')
-        canvas.create_text(x0, y0 + mode.buttonHeight * 3, text=f'Obstacles: {gameboard.obstaclesHit}', anchor='nw')
-        canvas.create_text(x0, y0 + mode.buttonHeight * 4, text=f'Missed: {gameboard.missedTargets}', anchor='nw')
-        canvas.create_text(x0, y0 + mode.buttonHeight * 5, text=f'No hits: {gameboard.noHits}', anchor='nw')
+        y0 = 0
+        y1 = y0 + boxHeight
+        textX = x0 + 10
+        textY = y0 + 5
+        canvas.create_rectangle(x0, y0, x1, y1, fill='black', outline='white', width=4)
+        canvas.create_text(textX, textY, text=f'Score: {gameboard.score}', anchor='nw', fill='white', font='System 14 bold')
+        canvas.create_text(textX, textY + intervalY, text=f'Targets: {gameboard.targetsHit}', anchor='nw', fill='white', font='System 14 bold')
+        canvas.create_text(textX, textY + intervalY * 2, text=f'Tokens: {gameboard.tokensCollected}', anchor='nw', fill='white', font='System 14 bold')
+        canvas.create_text(textX, textY + intervalY * 3, text=f'Obstacles: {gameboard.obstaclesHit}', anchor='nw', fill='white', font='System 14 bold')
+        canvas.create_text(textX, textY + intervalY * 4, text=f'Missed: {gameboard.missedTargets}', anchor='nw', fill='white', font='System 14 bold')
+        canvas.create_text(textX, textY + intervalY * 5, text=f'No Hits: {gameboard.noHits}', anchor='nw', fill='white', font='System 14 bold')
 
     def drawEndScores(mode, canvas):
-        # print(Score.scoreboard)
         for i in range(len(mode.gameboards)):
             gameboard = mode.gameboards[i]
-            mode.boxWidth, mode.boxHeight = gameboard.width * 3 / 4, gameboard.height / 5
-            x0 = (2 * gameboard.offset + gameboard.width) / 2 - mode.boxWidth / 2
-            x1 = x0 + mode.boxWidth
-            y0 = gameboard.height / 2 - mode.boxHeight / 2
-            y1 = y0 + mode.boxHeight
-            canvas.create_rectangle(x0, y0, x1, y1, fill='yellow')
+            boxWidth, boxHeight = gameboard.width * 3 / 4, gameboard.height / 5
+            x0 = (2 * gameboard.offset + gameboard.width) / 2 - boxWidth / 2
+            x1 = x0 + boxWidth
+            y0 = gameboard.height / 2 - boxHeight / 2
+            y1 = y0 + boxHeight
+            canvas.create_rectangle(x0, y0, x1, y1, fill='black', outline='white', width=4)
             textX = (x0 + x1) / 2
             textY = gameboard.height / 2
             if mode.players == 1:
-                canvas.create_text(textX, textY, text='Final score is:')
-                canvas.create_text(textY, textY + 20, text=f'{gameboard.score}')
+                canvas.create_text(textX, textY - 15, text='Final score was:', fill='white', font='System 18 bold')
+                canvas.create_text(textX, textY + 15, text=f'{gameboard.score}', fill='white', font='System 18 bold')
             else:
-                canvas.create_text(textX, textY, text=f"Player {i + 1}'s score is:")
-                canvas.create_text(textX, textY + 20, text=f'{gameboard.score}')
+                canvas.create_text(textX, textY - 15, text=f"Player {i + 1}'s score was:", fill='white', font='System 18 bold')
+                canvas.create_text(textX, textY + 15, text=f'{gameboard.score}', fill='white', font='System 18 bold')
+
+    def drawSongOptions(mode, canvas):
+        # canvas.create_text(mode.width / 2, mode.height / 2, text='choose from the songs in terminal', fill='white')
+        # for i in range(len(mode.filesInFolder)):
+        #     print(f'{i}: {mode.filesInFolder[i]}')
+        startY = 100
+        canvas.create_text(mode.width / 2, startY, text='Song Options', fill='white', font='System 36 bold')
+        startY += 50
+        intervalY = 30
+        numberX = 100
+        songX = numberX + 100
+        for i in range(len(mode.filesInFolder)):
+            song = mode.filesInFolder[i].split('.')[0]
+            canvas.create_text(numberX, startY + intervalY * i, text=str(i), anchor='w', fill='white', font='System 18 bold')
+            canvas.create_text(songX, startY + intervalY * i, text=song, anchor='w', fill='white', font='System 18 bold')
+
+    def getSongOptions(mode):
+        mode.filesInFolder = os.listdir('music')
+    
+    def drawParts(mode, canvas):
+        startY = 100
+        canvas.create_text(mode.width / 2, startY, text='Part Options', fill='white', font='System 36 bold')
+        startY += 50
+        intervalY = 30
+        numberX = 100
+        partX = numberX + 100
+        for i in range(len(mode.parts)):
+            part = mode.parts[i]
+            if part.partName == None:
+                label = f'Part {i}'
+            else:
+                label = part.partName
+            canvas.create_text(numberX, startY + intervalY * i, text=str(i), anchor='w', fill='white', font='System 18 bold')
+            canvas.create_text(partX, startY + intervalY * i, text=label, anchor='w', fill='white', font='System 18 bold')
+
 
     def drawButtons(mode, canvas):
-        for i in range(mode.numberOfButtons):
-            x0, x1 = mode.buttonCoordinates[i]
-            y0, y1 = mode.by0, mode.by1
-            canvas.create_rectangle(x0, y0, x1, y1, fill='white')
-            textX, textY = (x0 + x1) / 2, (y0 + y1) / 2
-            canvas.create_text(textX, textY, text=mode.buttonLabels[i])
+        textX, textY = (mode.bx0 + mode.bx1) / 2, (mode.by0 + mode.by1) / 2
+        canvas.create_image(textX, textY, image=ImageTk.PhotoImage(mode.homeButton))
+
+    def initBackground(mode):
+        # image from https://www.mobilebeat.com/wp-content/uploads/2016/07/Background-Music-768x576-1280x720.jpg
+        mode.background = mode.scaleImage(mode.loadImage("homebackground.png"), 1/2)
+    
+    def drawBackground(mode, canvas):
+        canvas.create_image(mode.width / 2, mode.height / 2, image=ImageTk.PhotoImage(mode.background))
 
     def redrawAll(mode, canvas):
+        canvas.create_rectangle(0, 0, mode.width, mode.height, fill='black')
         if mode.readyToPlay:
             mode.drawGameboards(canvas)
+        else:
+            mode.drawBackground(canvas)
+            if not mode.displayParts:
+                mode.drawSongOptions(canvas)
+        if mode.displayParts and not mode.readyToPlay:
+            mode.drawParts(canvas)
         if mode.displayEndScores:
             mode.drawEndScores(canvas)
         mode.drawButtons(canvas)
