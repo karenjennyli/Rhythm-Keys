@@ -1,7 +1,7 @@
 from cmu_112_graphics import *
 from Score import Score
 
-class scoreMode(Mode):
+class ScoreMode(Mode):
     def appStarted(mode):
         mode.initBackground()
         mode.initButtonDimensions()

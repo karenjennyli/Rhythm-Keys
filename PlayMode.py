@@ -1,12 +1,12 @@
 from cmu_112_graphics import *
 from music21 import *
 import pygame, time, random, os
-import homeMode
-from gamePieces import Target, Token, Obstacle
+import HomeMode
+from GamePiece import Target, Token, Obstacle
 from Gameboard import Gameboard
 from Score import Score
 
-class singleMode(Mode):
+class PlayMode(Mode):
     def appStarted(mode):
         mode.initBackground()
         mode.getSongOptions()
@@ -228,7 +228,7 @@ class singleMode(Mode):
                 mode.checkDisabledBoards()
             for gameboard in mode.gameboards:
                 gameboard.calculateScore()
-        if mode.playing and mode.gameboards[0].minY + mode.gameboards[0].scrollY >= mode.gameboards[0].height:
+        if mode.playing and mode.gameboards[0].minY + mode.gameboards[0].scrollY >= mode.gameboards[0].height and not mode.gameOver:
             mode.playing = False
             mode.gameOver = True
             for gameboard in mode.gameboards:
@@ -273,7 +273,7 @@ class singleMode(Mode):
         
     def checkPressedButtons(mode, x, y):
         if mode.bx0 < x < mode.bx1 and mode.by0 < y < mode.by1:
-            mode.app.setActiveMode(mode.app.homeMode)
+            mode.app.setActiveMode(mode.app.HomeMode)
 
     def drawGameboards(mode, canvas):
         for gameboard in mode.gameboards:

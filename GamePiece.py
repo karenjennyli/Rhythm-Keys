@@ -1,4 +1,4 @@
-class gamePiece(object):
+class GamePiece(object):
     def __init__(self, col, pressed, x, y0, y1):
         self.col = col
         self.pressed = False
@@ -12,7 +12,7 @@ class gamePiece(object):
     def __hash__(self):
         return hash((self.col, self.pressed, self.x, self.y0, self.y1))
 
-class Target(gamePiece):
+class Target(GamePiece):
     def __init__(self, col, pressed, x, y0, y1, pitch):
         super().__init__(col, pressed, x, y0, y1)
         self.pitch = pitch
@@ -24,14 +24,14 @@ class Target(gamePiece):
     def __hash__(self):
         return hash((self.col, self.pressed, self.x, self.y0, self.y1, self.pitch))
 
-class Token(gamePiece):
+class Token(GamePiece):
     def __init__(self, col, pressed, x, y0, y1):
         super().__init__(col, pressed, x, y0, y1)
 
-class Obstacle(gamePiece):
+class Obstacle(GamePiece):
     def __init__(self, col, pressed, x, y0, y1):
         super().__init__(col, pressed, x, y0, y1)
 
-class Attack(gamePiece):
+class Attack(GamePiece):
     def __init__(self, col, pressed, x, y0, y1):
         super().__init__(col, pressed, x, y0, y1)

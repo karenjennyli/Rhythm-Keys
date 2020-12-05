@@ -1,6 +1,6 @@
 from music21 import *
 import random
-from gamePieces import Target, Token, Obstacle, Attack
+from GamePiece import Target, Token, Obstacle, Attack
 
 import decimal
 def roundHalfUp(d):

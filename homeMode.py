@@ -1,6 +1,6 @@
 from cmu_112_graphics import *
 
-class homeMode(Mode):
+class HomeMode(Mode):
     def appStarted(mode):
         mode.initButtonDimensions()
         mode.initBackground()
@@ -20,16 +20,16 @@ class homeMode(Mode):
 
     def keyPressed(mode, event):
         if event.key == 'p':
-            mode.app.setActiveMode(mode.app.singleMode)
+            mode.app.setActiveMode(mode.app.PlayMode)
         elif event.key == 's':
-            mode.app.setActiveMode(mode.app.scoreMode)
+            mode.app.setActiveMode(mode.app.ScoreMode)
 
     def mousePressed(mode, event):
         x, y = event.x, event.y
         mode.checkPressedButtons(x, y)
         
     def checkPressedButtons(mode, x, y):
-        # mode.modesList = [mode.app.homeMode, mode.app.singleMode, mode.app.multiMode, mode.app.createMode, mode.app.scoreMode]
+        # mode.modesList = [mode.app.HomeMode, mode.app.singleMode, mode.app.multiMode, mode.app.createMode, mode.app.scoreMode]
         # y0, y1 = mode.by0, mode.by1
         # for i in range(mode.numberOfButtons):
         #     x0, x1 = mode.buttonCoordinates[i]
@@ -39,7 +39,7 @@ class homeMode(Mode):
         #             return
         #         mode.app.setActiveMode(mode.modesList[i])
         if mode.bx0 < x < mode.bx1 and mode.by0 < y < mode.by1:
-            mode.app.setActiveMode(mode.app.homeMode)
+            mode.app.setActiveMode(mode.app.HomeMode)
 
     def drawButtons(mode, canvas):
         canvas.create_rectangle(mode.bx0, mode.by0, mode.bx1, mode.by1, fill='black', outline='white', width=4)
