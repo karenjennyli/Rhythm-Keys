@@ -28,7 +28,7 @@ class Gameboard(object):
         self.lineY = self.height - self.bottomMargin
         self.cols = 5
         self.colWidth = self.width / self.cols
-        self.beatLength = 100
+        self.beatLength = 100 # length for one beat (quarter note as default)
 
     def setDifficulty(self, difficulty):
         self.difficulty = difficulty

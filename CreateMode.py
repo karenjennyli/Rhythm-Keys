@@ -197,7 +197,7 @@ class CreateMode(Mode):
                 text += note + ' '
             text += '\n'
         text = text[:-1]
-        # https://www.geeksforgeeks.org/reading-writing-text-files-python/
+        # https://www.geeksforgeeks.org/create-an-empty-file-using-python/
         path = 'grids'
         file = mode.songName + '.txt'
         with open(os.path.join(path, file), 'w') as fp:

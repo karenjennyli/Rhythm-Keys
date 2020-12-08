@@ -4,13 +4,14 @@ import pygame, time, random, os
 import HomeMode
 from GamePiece import Target, Token, Obstacle
 from Gameboard import Gameboard
+from PresetGameboard import PresetGameboard
 from Score import Score
 
 class PlayMode(Mode):
     def appStarted(mode):
         mode.initBackground()
         mode.getSongOptions()
-        mode.createModeSong = False
+        mode.presetGameboard = False
         mode.activated = True
         mode.readyToPlay = False
         mode.displayParts = False
@@ -25,8 +26,8 @@ class PlayMode(Mode):
             return
         else:
             mode.disabledTime = 5
-        mode.initGameboards(mode.players)
         mode.initMusic()
+        mode.initGameboards(mode.players)
         if mode.midi == None or not mode.partsSet:
             return
         mode.initDifficulty()
@@ -65,7 +66,10 @@ class PlayMode(Mode):
         keyDicts.extend([keyDict0, keyDict1, keyDict2, keyDict3])
         mode.gameboards = []
         for i in range(mode.players):
-            newBoard = Gameboard(mode.players)
+            if not mode.presetGameboard:
+                newBoard = Gameboard(mode.players)
+            else:
+                newBoard = PresetGameboard(mode.players)
             newBoard.initBoardDimensions(i, mode.width / mode.players, mode.height)
             newBoard.setKeysDict(keyDicts[i])
             mode.gameboards.append(newBoard)
@@ -93,7 +97,10 @@ class PlayMode(Mode):
     def initGamePiecesAllBoards(mode):
         for gameboard in mode.gameboards:
             gameboard.initGamePieceDimensions()
-            gameboard.initGamePieces(mode.partsNotes)
+            if mode.presetGameboard:
+                gameboard.initGamePieces(mode.grid)
+            else:
+                gameboard.initGamePieces(mode.partsNotes)
         mode.readyToPlay = True
 
     def initButtonDimensions(mode):
@@ -130,8 +137,22 @@ class PlayMode(Mode):
                 index = int(inputString)
             except:
                 continue
-        mode.midi = 'music/' + mode.filesInFolder[index]
+        fileName = mode.filesInFolder[index]
+        textFileName = fileName.split('.')[0] + '.txt'
+        if textFileName in os.listdir('gameboards'):
+            mode.presetGameboard = True
+            textFileName = 'gameboards/' + textFileName
+            textFile = open(textFileName, 'r')
+            mode.textGrid = textFile.read()
+            mode.getGrid()
+        mode.midi = 'music/' + fileName
         pygame.mixer.music.load(mode.midi)
+
+    def getGrid(mode):
+        gridList = mode.textGrid.splitlines()
+        mode.grid = dict()
+        for i in range(len(gridList)):
+            mode.grid[i] = gridList[i].split(' ')
 
     # extract necessary info from midi file using music21
     def getScoreInfo(mode):
@@ -145,12 +166,13 @@ class PlayMode(Mode):
         except:
             mode.quarterLength = 1 # should this be one?
             mode.bpm = 120
+        # time interval is time in ms / beat (quarter note)
         mode.timeInterval = 60 * 1000 / mode.bpm # 60s * 1000ms / bpm = ms/beat, time between each note
 
     # select music part
     def getScorePart(mode):
         mode.parts = mode.musicScore.parts
-        if mode.createModeSong: # use all the parts(there's probably only going to be one)
+        if mode.presetGameboard: # use all the parts(there's probably only going to be one)
             partIndices = [i for i in range(len(mode.parts))]
             mode.partsSet = True
         else:
@@ -424,7 +446,11 @@ class PlayMode(Mode):
         numberX = 100
         songX = numberX + 100
         for i in range(len(mode.filesInFolder)):
-            song = mode.filesInFolder[i].split('.')[0]
+            fileName = mode.filesInFolder[i]
+            song = fileName.split('.')[0]
+            textFileName = song + '.txt'
+            if textFileName in os.listdir('gameboards'):
+                song += ' **this song uses a preset gameboard**'
             canvas.create_text(numberX, startY + intervalY * i, text=str(i), anchor='w', fill='white', font='System 18 bold')
             canvas.create_text(songX, startY + intervalY * i, text=song, anchor='w', fill='white', font='System 18 bold')
 

@@ -10,12 +10,6 @@ class MyModalApp(ModalApp):
         app.PlayMode = PlayMode()
         app.CreateMode = CreateMode()
         app.ScoreMode = ScoreMode()
-        # app.setActiveMode(app.HomeMode)
-        app.setActiveMode(app.CreateMode)
-        app.gameboards = dict()
-        # write class CreateModeSong so we can save a list of Song objects so user can edit songs later
-    
-    # def getGameBoards(app):
-
+        app.setActiveMode(app.HomeMode)
 
 app = MyModalApp(width=1000, height=600)
