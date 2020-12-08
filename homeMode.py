@@ -28,7 +28,7 @@ class HomeMode(Mode):
 
     def initBackground(mode):
         # image from https://www.mobilebeat.com/wp-content/uploads/2016/07/Background-Music-768x576-1280x720.jpg
-        mode.background = mode.scaleImage(mode.loadImage("homebackground.png"), 1/2)
+        mode.background = mode.scaleImage(mode.loadImage("pictures/homebackground.png"), 1/2)
     
     def drawBackground(mode, canvas):
         canvas.create_image(mode.width / 2, mode.height / 2, image=ImageTk.PhotoImage(mode.background))
