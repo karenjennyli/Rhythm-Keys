@@ -35,12 +35,12 @@ class PlayMode(Mode):
         mode.initGamePiecesAllBoards()
 
     def modeDeactivated(mode):
-        try:
-            pygame.mixer.music.stop()
-            pygame.quit()
-        except:
+        if pygame.mixer.get_init() == None:
             return
+        pygame.mixer.music.stop()
+        pygame.quit()
 
+    # how to make sure this isn't called when it's the first time the mode is activated?
     def modeActivated(mode):
         mode.appStarted()
 
@@ -120,16 +120,6 @@ class PlayMode(Mode):
         pygame.init()
         mode.midi = None
         musicSet = False
-        # while mode.midi == None or not musicSet:
-        #     mode.midi = mode.getUserInput("Enter midi file's path.")
-        #     if mode.midi == None:
-        #         return
-        #     try:
-        #         pygame.mixer.music.load(mode.midi)
-        #         musicSet = True
-        #     except:
-        #         musicSet = False
-        #         continue
         index = None
         while index == None or index not in range(len(mode.filesInFolder)):
             inputString = mode.getUserInput("Enter song number.")
