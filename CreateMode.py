@@ -89,22 +89,23 @@ class CreateMode(Mode):
                   'dodger blue',
                   'purple']
         mode.colorCoords = dict()
-        mode.notes = ['c4', 'c_4', 'd4', 'd_4', 'e4', 'f4', 'f_4', 'g4', 'g_4', 'a4', 'a_4', 'b4']
         mode.notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+        mode.gamepieces = ['T', 'O', '@', 'X']
+        mode.paletteLetters = mode.notes + mode.gamepieces
+        mode.colors = mode.colors + ['black' for i in range(len(mode.gamepieces))]
         mode.notesDict = dict()
-        for i in range(len(mode.notes)):
-            note = mode.notes[i]
+        for i in range(len(mode.paletteLetters)):
+            letter = mode.paletteLetters[i]
             color = mode.colors[i]
-            mode.notesDict[note] = color
+            mode.notesDict[letter] = color
         for i in range(len(mode.colors)):
             x0 = mode.PaletteSideOffset + i * mode.colorWidth
             x1 = x0 + mode.colorWidth
             y0 = mode.PaletteTopOffset
             y1 = y0 + mode.colorHeight
-            note = mode.notes[i]
+            letter = mode.paletteLetters[i]
             color = mode.colors[i]
-            mode.colorCoords[note] = (x0, y0, x1, y1, color)
-        
+            mode.colorCoords[letter] = (x0, y0, x1, y1, color)
         mode.currentNote = 'C'
 
     # button dimensions
@@ -114,6 +115,7 @@ class CreateMode(Mode):
         mode.bx1 = mode.bx0 + mode.buttonWidth
         mode.by0 = 10
         mode.by1 = mode.by0 + mode.buttonHeight
+        # https://www.flaticon.com/
         mode.homeButton = mode.loadImage("pictures/home.png")
 
     # plays the current song on the grid
@@ -154,20 +156,28 @@ class CreateMode(Mode):
             x0, y0, x1, y1, color = mode.colorCoords[note]
             if x0 < x < x1 and y0 < y < y1:
                 mode.currentNote = note
+                if note in mode.gamepieces:
+                    return
                 sound = mode.soundsDict[note]
                 pygame.mixer.Sound.play(sound)
                 return
+   
     # check if grid is pressed
     def checkPressedGrid(mode, x, y):
         col = int((y - mode.gridTopOffset) // mode.colorHeight)
         row = int((x - mode.gridSideOffset) // mode.colorWidth)
         if not (0 <= col <= 4 and 0 <= row < mode.pageLength):
             return
-        sound = mode.soundsDict[mode.currentNote]
-        pygame.mixer.Sound.play(sound)
+        if mode.currentNote not in mode.gamepieces:
+            sound = mode.soundsDict[mode.currentNote]
+            pygame.mixer.Sound.play(sound)
+        if mode.currentNote == 'X':
+            newNote = '0'
+        else:
+            newNote = mode.currentNote
         row += mode.currentPage * mode.pageLength
         colList = mode.grid[col]
-        colList[row] = mode.currentNote
+        colList[row] = newNote
 
     # create and save a midi file from the current grid
     def createMidi(mode):
@@ -181,19 +191,23 @@ class CreateMode(Mode):
             if mode.songName == None:
                 return
         mode.stream = stream.Stream()
+        containsNotes = False
         for i in range(len(mode.grid[0])):
             notes = set()
             for col in mode.grid:
                 colList = mode.grid[col]
                 elem = colList[i]
+                if elem in mode.gamepieces:
+                    continue
                 notes.add(elem)
             notesList = list(notes)
-            if notesList == ['0']:
+            if notesList == ['0'] or notesList == []:
                 newNote = note.Rest(type='eighth') # add a rest if there's no notes
             elif len(notesList) == 1:
                 elem = notesList[0]
                 noteNotation = elem + '4'
                 newNote = note.Note(noteNotation, type='eighth')
+                containsNotes = True
             else:
                 chordList = []
                 for elem in notesList:
@@ -201,7 +215,11 @@ class CreateMode(Mode):
                         noteNotation = elem + '4'
                         chordList.append(noteNotation)
                 newNote = chord.Chord(chordList, type='eighth')
+                containsNotes = True
             mode.stream.append(newNote)
+        if not containsNotes:
+            mode.noNotesMessage = True
+            return
         midiFromStream = midi.translate.streamToMidiFile(mode.stream)
         mode.stream.write('midi', 'music/' + mode.songName + '.mid')
         mode.finished = True
@@ -219,7 +237,7 @@ class CreateMode(Mode):
         text = text[:-1]
         # referenced for writing files
         # https://www.geeksforgeeks.org/create-an-empty-file-using-python/
-        path = 'grids'
+        path = 'gameboards'
         file = mode.songName + '.txt'
         with open(os.path.join(path, file), 'w') as fp:
             fp.write(text)
@@ -239,9 +257,11 @@ class CreateMode(Mode):
         mode.cols = 5
         mode.pageLength = 24
         mode.colorWidth = mode.colorHeight = (mode.width - 25) / mode.pageLength
+        mode.eraserLength = mode.colorWidth * 0.9
         mode.gridTopOffset = mode.height / 2 - mode.colorHeight * mode.cols / 2
         mode.gridSideOffset = mode.width / 2 - mode.colorWidth * mode.pageLength / 2
-        mode.PaletteSideOffset = 300
+        mode.numberOfLetters = 16
+        mode.PaletteSideOffset = mode.width / 2 - mode.colorWidth * mode.numberOfLetters / 2
         mode.PaletteTopOffset = 10
 
     # draw background image

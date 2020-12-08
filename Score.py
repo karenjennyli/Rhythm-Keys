@@ -4,6 +4,7 @@ class Score(object):
     scoreboard = []
 
     @staticmethod
+    # sort scores based on stats
     # referenced for sorting:
     # https://www.techiedelight.com/sort-list-of-objects-by-multiple-attributes-python/
     def assignPlaces():

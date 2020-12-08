@@ -57,7 +57,7 @@ class Gameboard(object):
         self.pieceTopMargin = 20
         self.pieceSideMargin = self.colWidth / 8
         self.targetLength = 100
-        self.tokenLength = 50
+        self.tokenLength = 60
 
     # initialize all game pieces
     def initGamePieces(self, partsNotes):
@@ -188,7 +188,7 @@ class Gameboard(object):
     # return True if an attack was hit for multiplayer
     def checkAllPressedPieces(self, col):
         y0 = self.lineY
-        y1 = self.lineY - self.smallestLength
+        y1 = self.lineY - self.tokenLength
         hitTarget = self.checkPressedPiece(self.targetsDict[col], y0, y1)
         hitToken = self.checkPressedPiece(self.tokensDict[col], y0, y1)
         hitObstacle = self.checkPressedPiece(self.obstaclesDict[col], y0, y1)

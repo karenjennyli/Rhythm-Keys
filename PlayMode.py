@@ -347,7 +347,8 @@ class PlayMode(Mode):
                     gameboard.missedTargets += 1 # FIX THIS IT'S NOT WORKING
                 elif target.pressed:
                     target.color = 'green'
-                canvas.create_rectangle(x0, y0, x1, y1, outline=target.color, width=4, fill='black')
+                if not target.pressed:
+                    canvas.create_rectangle(x0, y0, x1, y1, outline=target.color, width=4, fill='black')
 
     # draw all tokens
     def drawTokens(mode, canvas, gameboard):
@@ -358,13 +359,17 @@ class PlayMode(Mode):
                 x1 = x0 + gameboard.colWidth - 2 * gameboard.pieceSideMargin
                 y0 = token.y0 + gameboard.scrollY
                 y1 = token.y1 + gameboard.scrollY
+                cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+                r = abs(y0 - y1) / 2
                 if y1 > gameboard.height or y0 < 0:
                     continue
                 if token.pressed:
                     color = 'green'
                 else:
                     color = 'gold'
-                canvas.create_rectangle(x0, y0, x1, y1, outline=color, width=4, fill='black')
+                if not token.pressed:
+                    # canvas.create_rectangle(x0, y0, x1, y1, outline=color, width=4, fill='black')
+                    canvas.create_oval(cx - r, cy - r, cx + r, cy + r, outline=color, width=4, fill='black')
 
     # draw all obstacles
     def drawObstacles(mode, canvas, gameboard):
@@ -381,7 +386,8 @@ class PlayMode(Mode):
                     color = 'red'
                 else:
                     color = 'black'
-                canvas.create_rectangle(x0, y0, x1, y1, outline='red', width=4, fill='black')
+                if not obstacle.pressed:
+                    canvas.create_rectangle(x0, y0, x1, y1, outline='red', width=4, fill='black')
 
     # draw all attacks
     def drawAttacks(mode, canvas, gameboard):
@@ -392,13 +398,16 @@ class PlayMode(Mode):
                 x1 = x0 + gameboard.colWidth - 2 * gameboard.pieceSideMargin
                 y0 = attack.y0 + gameboard.scrollY
                 y1 = attack.y1 + gameboard.scrollY
+                cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
                 if y1 > gameboard.height or y0 < 0:
                     continue
                 if attack.pressed:
                     color = 'green'
                 else:
-                    color = 'purple'
-                canvas.create_rectangle(x0, y0, x1, y1, outline=color, width=4, fill='black')
+                    color = 'red'
+                if not attack.pressed:
+                    # canvas.create_rectangle(x0, y0, x1, y1, outline=color, width=4, fill='black')
+                    canvas.create_image(cx, cy, image=ImageTk.PhotoImage(mode.skull))
     
     # draw the message that the gameboard's keys are disabled
     def drawAttackMessages(mode, canvas, gameboard):
@@ -412,9 +421,9 @@ class PlayMode(Mode):
             textY = (gameboard.lineY + gameboard.height) / 2
             timeLeft = int(mode.disabledTime - (time.time() - gameboard.disabledStartTime)) + 1
             if timeLeft == 1:
-                canvas.create_text(textX, textY, text=f'Keys disabled for {timeLeft} more second!', fill='white', font='System 18 bold')
+                canvas.create_text(textX, textY, text=f'Keys disabled for {timeLeft} more second!', fill='white', font='System 11 bold')
             else:
-                canvas.create_text(textX, textY, text=f'Keys disabled for {timeLeft} more seconds!', fill='white', font='System 18 bold')
+                canvas.create_text(textX, textY, text=f'Keys disabled for {timeLeft} more seconds!', fill='white', font='System 11 bold')
 
     # the strike line at the bottom of the screen
     def drawStrikeLine(mode, canvas, gameboard):
@@ -430,7 +439,8 @@ class PlayMode(Mode):
             if key in mode.keysHeld:
                 x0 = col * gameboard.colWidth + gameboard.offset
                 x1 = x0 + gameboard.colWidth
-                y0 = gameboard.lineY - gameboard.smallestLength
+                # y0 = gameboard.lineY - gameboard.smallestLength
+                y0 = gameboard.lineY - gameboard.tokenLength
                 y1 = gameboard.lineY
                 canvas.create_rectangle(x0, y0, x1, y1, fill='blue', outline='blue')
 
@@ -518,6 +528,8 @@ class PlayMode(Mode):
     def initBackground(mode):
         # image from https://www.mobilebeat.com/wp-content/uploads/2016/07/Background-Music-768x576-1280x720.jpg
         mode.background = mode.scaleImage(mode.loadImage("pictures/homebackground.png"), 1/2)
+        # image from https://www.flaticon.com/
+        mode.skull = mode.loadImage("pictures/skull.png")
     
     # draw background
     def drawBackground(mode, canvas):

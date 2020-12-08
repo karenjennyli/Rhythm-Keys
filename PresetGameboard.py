@@ -71,7 +71,7 @@ class PresetGameboard(Gameboard):
                 y0 = self.lineY - i * self.beatLength * elemDuration / 2
                 y1 = y0 - elemDuration * self.tokenLength - self.pieceTopMargin
                 x = col * self.colWidth
-                newToken = Target(col, False, x, y0, y1, None)
+                newToken = Token(col, False, x, y0, y1)
                 self.tokensDict[col].append(newToken)
     
     # initialize obstacles based on grid
@@ -89,7 +89,7 @@ class PresetGameboard(Gameboard):
                 y0 = self.lineY - i * self.beatLength * elemDuration / 2
                 y1 = y0 - elemDuration * self.tokenLength - self.pieceTopMargin
                 x = col * self.colWidth
-                newObstacle = Obstacle(col, False, x, y0, y1, None)
+                newObstacle = Obstacle(col, False, x, y0, y1)
                 self.obstaclesDict[col].append(newObstacle)
     
     # initialize attacks based on grid
@@ -101,11 +101,11 @@ class PresetGameboard(Gameboard):
             for col in grid:
                 colList = grid[col]
                 msg = colList[i]
-                if msg != 'X':
+                if msg != '@':
                     continue
                 elemDuration = 1 / 8
                 y0 = self.lineY - i * self.beatLength * elemDuration / 2
                 y1 = y0 - elemDuration * self.tokenLength - self.pieceTopMargin
                 x = col * self.colWidth
-                newAttack = Attack(col, False, x, y0, y1, None)
+                newAttack = Attack(col, False, x, y0, y1)
                 self.attacksDict[col].append(newAttack)        
