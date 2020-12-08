@@ -4,7 +4,8 @@ class Score(object):
     scoreboard = []
 
     @staticmethod
-    # sorting: https://www.techiedelight.com/sort-list-of-objects-by-multiple-attributes-python/
+    # referenced for sorting:
+    # https://www.techiedelight.com/sort-list-of-objects-by-multiple-attributes-python/
     def assignPlaces():
         Score.scoreboard.sort(key=lambda x: (-x.score, -x.difficulty, x. song, x.player))
         for i in range(len(Score.scoreboard)):
