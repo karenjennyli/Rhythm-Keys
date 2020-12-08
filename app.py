@@ -1,3 +1,5 @@
+# MyModalApp class with all modes initialized
+
 from cmu_112_graphics import *
 from HomeMode import HomeMode
 from PlayMode import PlayMode

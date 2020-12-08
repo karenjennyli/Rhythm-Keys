@@ -1,11 +1,16 @@
+# ScoreMode class: mode for user to see the scoreboard with ranked scores
+# from this session
+
 from cmu_112_graphics import *
 from Score import Score
 
+# ScoreMode class
 class ScoreMode(Mode):
     def appStarted(mode):
         mode.initBackground()
         mode.initButtonDimensions()
 
+    # home button dimensions
     def initButtonDimensions(mode):
         mode.buttonWidth = mode.buttonHeight = 40
         mode.bx0 = 10
@@ -21,21 +26,26 @@ class ScoreMode(Mode):
         x, y = event.x, event.y
         mode.checkPressedButtons(x, y)
 
+    # check if home button is pressed
     def checkPressedButtons(mode, x, y):
         if mode.bx0 < x < mode.bx1 and mode.by0 < y < mode.by1:
             mode.app.setActiveMode(mode.app.HomeMode)
 
+    # draw home button
     def drawButtons(mode, canvas):
         textX, textY = (mode.bx0 + mode.bx1) / 2, (mode.by0 + mode.by1) / 2
         canvas.create_image(textX, textY, image=ImageTk.PhotoImage(mode.homeButton))
 
+    # get background image
     def initBackground(mode):
         # image from https://www.mobilebeat.com/wp-content/uploads/2016/07/Background-Music-768x576-1280x720.jpg
         mode.background = mode.scaleImage(mode.loadImage("pictures/homebackground.png"), 1/2)
     
+    # draw background
     def drawBackground(mode, canvas):
         canvas.create_image(mode.width / 2, mode.height / 2, image=ImageTk.PhotoImage(mode.background))
 
+    # draw the scoreboard information
     def drawScoreboard(mode, canvas):
         startY = 100
         canvas.create_text(mode.width / 2, startY, text='Scoreboard', fill='white', font='System 36 bold')

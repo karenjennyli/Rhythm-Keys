@@ -1,3 +1,6 @@
+# PlayMode class: the moe that allows the player to choose their song 
+# and play the song
+
 from cmu_112_graphics import *
 from music21 import *
 import pygame, time, random, os
@@ -7,6 +10,7 @@ from Gameboard import Gameboard
 from PresetGameboard import PresetGameboard
 from Score import Score
 
+# Playmode Class
 class PlayMode(Mode):
     def appStarted(mode):
         mode.initBackground()
@@ -46,6 +50,7 @@ class PlayMode(Mode):
     def modeActivated(mode):
         mode.appStarted()
 
+    # get user input of number of players
     def getNumberOfPlayers(mode):
         mode.players = None
         while not (isinstance(mode.players, int) and 1 <= mode.players <= 4):
@@ -57,6 +62,7 @@ class PlayMode(Mode):
             except:
                 continue
 
+    # initialized gameboards
     def initGameboards(mode, players):
         keyDicts = []
         keyDict0 = {'1': 0, '2': 1, '3': 2, '4': 3, '5': 4}
@@ -74,6 +80,7 @@ class PlayMode(Mode):
             newBoard.setKeysDict(keyDicts[i])
             mode.gameboards.append(newBoard)
 
+    # get difficulty based on user input
     def initDifficulty(mode):
         mode.difficulty = None
         levels = {1, 2, 3, 4, 5}
@@ -89,11 +96,13 @@ class PlayMode(Mode):
             gameboard = mode.gameboards[i]
             gameboard.setDifficulty(mode.difficulty)
 
+    # intialize scrolling for each gameboard
     def initScrolling(mode):
         for i in range(mode.players):
             gameboard = mode.gameboards[i]
             gameboard.initScroll(mode.timeInterval)
         
+    # initialize all gameboard pieces for all gameboards
     def initGamePiecesAllBoards(mode):
         for gameboard in mode.gameboards:
             gameboard.initGamePieceDimensions()
@@ -103,6 +112,7 @@ class PlayMode(Mode):
                 gameboard.initGamePieces(mode.partsNotes)
         mode.readyToPlay = True
 
+    # button dimensions
     def initButtonDimensions(mode):
         mode.buttonWidth = mode.buttonHeight = 40
         mode.bx0 = 10
@@ -112,6 +122,7 @@ class PlayMode(Mode):
         # https://www.flaticon.com/
         mode.homeButton = mode.loadImage("pictures/home.png")
 
+    # get the music that player wants to play and info from the music
     def initMusic(mode):
         mode.loadMusic()
         if mode.midi == None:
@@ -119,11 +130,13 @@ class PlayMode(Mode):
         mode.getScoreInfo()
         mode.getScorePart()
 
+    # intialize keysHeld dict to store keys currently pressed
     def initKeysHeld(mode):
         mode.keysHeld = set()
         mode.keyReleasedTimes = dict()
         mode.releaseWaitTime = 0.1
 
+    # get song player wants to play
     def loadMusic(mode):
         pygame.init()
         mode.midi = None
@@ -148,6 +161,7 @@ class PlayMode(Mode):
         mode.midi = 'music/' + fileName
         pygame.mixer.music.load(mode.midi)
 
+    # get the grid from saved gameboards folder
     def getGrid(mode):
         gridList = mode.textGrid.splitlines()
         mode.grid = dict()
@@ -155,6 +169,8 @@ class PlayMode(Mode):
             mode.grid[i] = gridList[i].split(' ')
 
     # extract necessary info from midi file using music21
+    # referenced music21 user's guide and documentation to use music21 module
+    # https://web.mit.edu/music21/doc/usersGuide/index.html
     def getScoreInfo(mode):
         mode.musicScore = converter.parse(mode.midi)
         mode.allNotes = mode.musicScore.recurse().notesAndRests.stream()
@@ -170,6 +186,8 @@ class PlayMode(Mode):
         mode.timeInterval = 60 * 1000 / mode.bpm # 60s * 1000ms / bpm = ms/beat, time between each note
 
     # select music part
+    # referenced music21 user's guide and documentation to use music21 module
+    # https://web.mit.edu/music21/doc/usersGuide/index.html
     def getScorePart(mode):
         mode.parts = mode.musicScore.parts
         if mode.presetGameboard: # use all the parts(there's probably only going to be one)
@@ -225,6 +243,7 @@ class PlayMode(Mode):
         if mode.players > 1 and attackersIndices != set():
             mode.disableKeysAttack(attackersIndices)
 
+    # disable gameboard's keys after getting attacked
     def disableKeysAttack(mode, attackersIndices):
         disabledStartTime = time.time()
         for i in range(len(mode.gameboards)):
@@ -253,6 +272,7 @@ class PlayMode(Mode):
             mode.displayEndScores = True
             mode.addScore()
 
+    # let user add their score to the scoreboard
     def addScore(mode):
         for i in range(len(mode.gameboards)):
             player = mode.getUserInput(f"Enter player {i + 1}'s name if you want to get added to the scoreboard.")
@@ -263,6 +283,7 @@ class PlayMode(Mode):
             song = song.split('.')[0]
             newScore = Score(player, gameboard.score, song, mode.difficulty)
 
+    # check if the gameboards should still be disabled
     def checkDisabledBoards(mode):
         currentTime = time.time()
         for gameboard in mode.gameboards:
@@ -270,6 +291,7 @@ class PlayMode(Mode):
                 gameboard.disabledStartTime = None
                 gameboard.keysDisabled = False
 
+    # check if the keys are still pressed
     def checkKeys(mode):
         releasedKeys = set()
         for key in mode.keyReleasedTimes:
@@ -279,6 +301,7 @@ class PlayMode(Mode):
             mode.keyReleasedTimes.pop(key)
             mode.keysHeld.remove(key)
     
+    # scroll the screen
     def scroll(mode):
         dt = time.time() - mode.startTime
         for gameboard in mode.gameboards:
@@ -288,10 +311,12 @@ class PlayMode(Mode):
         x, y = event.x, event.y
         mode.checkPressedButtons(x, y)
         
+    # check if home button is pressed
     def checkPressedButtons(mode, x, y):
         if mode.bx0 < x < mode.bx1 and mode.by0 < y < mode.by1:
             mode.app.setActiveMode(mode.app.HomeMode)
 
+    # draw all gameboards
     def drawGameboards(mode, canvas):
         for gameboard in mode.gameboards:
             mode.drawTargets(canvas, gameboard)
@@ -306,6 +331,7 @@ class PlayMode(Mode):
             y0, y1 = 0, mode.height
             canvas.create_line(x, y0, x, y1, fill='white', width=4)
 
+    # draw all targets
     def drawTargets(mode, canvas, gameboard):
         targetsDict = gameboard.targetsDict
         for col in targetsDict:
@@ -323,6 +349,7 @@ class PlayMode(Mode):
                     target.color = 'green'
                 canvas.create_rectangle(x0, y0, x1, y1, outline=target.color, width=4, fill='black')
 
+    # draw all tokens
     def drawTokens(mode, canvas, gameboard):
         tokensDict = gameboard.tokensDict
         for col in tokensDict:
@@ -339,6 +366,7 @@ class PlayMode(Mode):
                     color = 'gold'
                 canvas.create_rectangle(x0, y0, x1, y1, outline=color, width=4, fill='black')
 
+    # draw all obstacles
     def drawObstacles(mode, canvas, gameboard):
         obstaclesDict = gameboard.obstaclesDict
         for col in obstaclesDict:
@@ -355,6 +383,7 @@ class PlayMode(Mode):
                     color = 'black'
                 canvas.create_rectangle(x0, y0, x1, y1, outline='red', width=4, fill='black')
 
+    # draw all attacks
     def drawAttacks(mode, canvas, gameboard):
         attacksDict = gameboard.attacksDict
         for col in attacksDict:
@@ -371,6 +400,7 @@ class PlayMode(Mode):
                     color = 'purple'
                 canvas.create_rectangle(x0, y0, x1, y1, outline=color, width=4, fill='black')
     
+    # draw the message that the gameboard's keys are disabled
     def drawAttackMessages(mode, canvas, gameboard):
         if gameboard.keysDisabled and mode.playing:
             x0 = gameboard.offset
@@ -382,10 +412,11 @@ class PlayMode(Mode):
             textY = (gameboard.lineY + gameboard.height) / 2
             timeLeft = int(mode.disabledTime - (time.time() - gameboard.disabledStartTime)) + 1
             if timeLeft == 1:
-                canvas.create_text(textX, textY, text=f'Keys disabled for {timeLeft} more second!', fill='white')
+                canvas.create_text(textX, textY, text=f'Keys disabled for {timeLeft} more second!', fill='white', font='System 18 bold')
             else:
-                canvas.create_text(textX, textY, text=f'Keys disabled for {timeLeft} more seconds!', fill='white')
+                canvas.create_text(textX, textY, text=f'Keys disabled for {timeLeft} more seconds!', fill='white', font='System 18 bold')
 
+    # the strike line at the bottom of the screen
     def drawStrikeLine(mode, canvas, gameboard):
         canvas.create_line(gameboard.offset, gameboard.lineY, gameboard.width + gameboard.offset, gameboard.lineY,
                         width=4, fill='white')
@@ -403,6 +434,7 @@ class PlayMode(Mode):
                 y1 = gameboard.lineY
                 canvas.create_rectangle(x0, y0, x1, y1, fill='blue', outline='blue')
 
+    # draw the stats of the player
     def drawStats(mode, canvas, gameboard):
         intervalY = 25
         boxWidth, boxHeight = 150, intervalY * 6 + 5
@@ -420,6 +452,7 @@ class PlayMode(Mode):
         canvas.create_text(textX, textY + intervalY * 4, text=f'Missed: {gameboard.missedTargets}', anchor='nw', fill='white', font='System 14 bold')
         canvas.create_text(textX, textY + intervalY * 5, text=f'No Hits: {gameboard.noHits}', anchor='nw', fill='white', font='System 14 bold')
 
+    # draw a message with the player's end score
     def drawEndScores(mode, canvas):
         for i in range(len(mode.gameboards)):
             gameboard = mode.gameboards[i]
@@ -438,6 +471,7 @@ class PlayMode(Mode):
                 canvas.create_text(textX, textY - 15, text=f"Player {i + 1}'s score was:", fill='white', font='System 18 bold')
                 canvas.create_text(textX, textY + 15, text=f'{gameboard.score}', fill='white', font='System 18 bold')
 
+    # draw the song options the player can choose from
     def drawSongOptions(mode, canvas):
         startY = 100
         canvas.create_text(mode.width / 2, startY, text='Song Options', fill='white', font='System 36 bold')
@@ -454,9 +488,11 @@ class PlayMode(Mode):
             canvas.create_text(numberX, startY + intervalY * i, text=str(i), anchor='w', fill='white', font='System 18 bold')
             canvas.create_text(songX, startY + intervalY * i, text=song, anchor='w', fill='white', font='System 18 bold')
 
+    # get all the names of the files in the music folder
     def getSongOptions(mode):
         mode.filesInFolder = os.listdir('music')
     
+    # draw the part options for a song the user can choose from
     def drawParts(mode, canvas):
         startY = 100
         canvas.create_text(mode.width / 2, startY, text='Part Options', fill='white', font='System 36 bold')
@@ -473,15 +509,17 @@ class PlayMode(Mode):
             canvas.create_text(numberX, startY + intervalY * i, text=str(i), anchor='w', fill='white', font='System 18 bold')
             canvas.create_text(partX, startY + intervalY * i, text=label, anchor='w', fill='white', font='System 18 bold')
 
-
+    # draw home button
     def drawButtons(mode, canvas):
         textX, textY = (mode.bx0 + mode.bx1) / 2, (mode.by0 + mode.by1) / 2
         canvas.create_image(textX, textY, image=ImageTk.PhotoImage(mode.homeButton))
 
+    # get background image
     def initBackground(mode):
         # image from https://www.mobilebeat.com/wp-content/uploads/2016/07/Background-Music-768x576-1280x720.jpg
         mode.background = mode.scaleImage(mode.loadImage("pictures/homebackground.png"), 1/2)
     
+    # draw background
     def drawBackground(mode, canvas):
         canvas.create_image(mode.width / 2, mode.height / 2, image=ImageTk.PhotoImage(mode.background))
 

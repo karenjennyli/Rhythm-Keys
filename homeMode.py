@@ -1,10 +1,14 @@
+# HomeMode class: home screen that allows user to navigate through the game
+
 from cmu_112_graphics import *
 
+# HomeMode class
 class HomeMode(Mode):
     def appStarted(mode):
         mode.initButtonDimensions()
         mode.initBackground()
 
+    # button dimensions
     def initButtonDimensions(mode):
         pass
 
@@ -19,17 +23,21 @@ class HomeMode(Mode):
     def mousePressed(mode, event):
         x, y = event.x, event.y
         mode.checkPressedButtons(x, y)
-        
+
+    # check if buttons are pressed
     def checkPressedButtons(mode, x, y):
         pass
 
+    # draw buttons
     def drawButtons(mode, canvas):
         pass
 
+    # retreive background image
     def initBackground(mode):
         # image from https://www.mobilebeat.com/wp-content/uploads/2016/07/Background-Music-768x576-1280x720.jpg
         mode.background = mode.scaleImage(mode.loadImage("pictures/homebackground.png"), 1/2)
     
+    # draw background
     def drawBackground(mode, canvas):
         canvas.create_image(mode.width / 2, mode.height / 2, image=ImageTk.PhotoImage(mode.background))
 

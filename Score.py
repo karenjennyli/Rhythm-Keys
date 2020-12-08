@@ -1,3 +1,5 @@
+# Score class for storing the information of the scoreboard
+
 class Score(object):
     scoreboard = []
 

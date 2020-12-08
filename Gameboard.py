@@ -1,7 +1,11 @@
+# Gameboard class: gameboard object that stores information such as:
+# the targets (notes), tokens, difficulty, etc.
+
 from music21 import *
 import random
 from GamePiece import Target, Token, Obstacle, Attack
 
+# Gameboard class
 class Gameboard(object):
     def __init__(self, players):
         self.score = 0
@@ -9,6 +13,7 @@ class Gameboard(object):
         self.keysDisabled = False
         self.disabledStartTime = None
 
+    # calculate score based on stats
     def calculateScore(self):
         # tokens count as 5 targets hit
         # obstacles and miss hits decrease targets hit calculation by one each
@@ -18,9 +23,11 @@ class Gameboard(object):
         else:
             self.score = round(fraction * 10000)
 
+    # keysDict to store the keys needed to play the game for each gameboard
     def setKeysDict(self, keysDict):
         self.keysDict = keysDict
     
+    # gameboard dimensions
     def initBoardDimensions(self, index, width, height):
         self.width, self.height = width, height
         self.offset = self.width * index
@@ -30,24 +37,29 @@ class Gameboard(object):
         self.colWidth = self.width / self.cols
         self.beatLength = 100 # length for one beat (quarter note as default)
 
+    # set difficulty of gameboard
     def setDifficulty(self, difficulty):
         self.difficulty = difficulty
         self.maxNotes = difficulty
         self.beatLength *= (self.difficulty + 1) / 3
     
+    # scrolling for play mode
     def initScroll(self, timeInterval):
         self.scrollY = 0
         self.dy = self.beatLength * 10 / timeInterval
 
+    # determine current scrollY based on current time
     def setScroll(self, dt):
         self.scrollY = self.dy * dt * 100
     
+    # gamepiece dimensions
     def initGamePieceDimensions(self):
         self.pieceTopMargin = 20
         self.pieceSideMargin = self.colWidth / 8
         self.targetLength = 100
         self.tokenLength = 50
 
+    # initialize all game pieces
     def initGamePieces(self, partsNotes):
         self.targetsHit = 0
         self.noHits = 0
@@ -63,6 +75,9 @@ class Gameboard(object):
             self.totalAttacks = self.totalTargets // 50 + 1
             self.initAttacks()
         
+    # initialize targets based on partsNotes
+    # referenced music21 user's guide and documentation to use music21 module
+    # https://web.mit.edu/music21/doc/usersGuide/index.html
     def initTargets(self, partsNotes):
         self.totalTargets = 0
         self.smallestLength = self.targetLength
@@ -97,6 +112,7 @@ class Gameboard(object):
                         self.targetsDict[col].append(newTarget)
                         self.totalTargets += 1
 
+    # initialize tokens
     def initTokens(self):
         self.tokensDict = dict()
         for i in range(self.cols):
@@ -107,13 +123,12 @@ class Gameboard(object):
             y1 = random.randint(int(self.minY), self.lineY - self.tokenLength) + self.pieceTopMargin
             y0 = y1 + self.tokenLength - self.pieceTopMargin
             x = col * self.colWidth
-            # if (self.placeValid(col, y0, y1, self.tokensDict) and
-            #     self.placeValid(col, y0, y1, self.targetsDict)):
-            if self.placeValid(col, y0, y1, self.tokensDict):
+            if self.placeValid(col, y0, y1, self.tokensDict): # prevent overlapping tokens
                 newToken = Token(col, False, x, y0, y1)
                 self.tokensDict[col].append(newToken)
                 count += 1
     
+    # initialize obstacles
     def initObstacles(self):
         self.obstaclesDict = dict()
         for i in range(self.cols):
@@ -125,12 +140,13 @@ class Gameboard(object):
             if targetList == []:
                 continue
             targetIndex = random.randint(0, len(targetList) - 1)
-            target = targetList.pop(targetIndex)
+            target = targetList.pop(targetIndex) # replace target with obstacle
             x, y0, y1 = target.x, target.y0, target.y1
             newObstacle = Obstacle(col, False, x, y0, y1)
             self.obstaclesDict[col].append(newObstacle)
             count += 1
     
+    # initialize attacks
     def initAttacks(self):
         self.attacksDict = dict()
         for i in range(self.cols):
@@ -141,12 +157,14 @@ class Gameboard(object):
             y1 = random.randint(int(self.minY), self.lineY - self.tokenLength) + self.pieceTopMargin
             y0 = y1 + self.tokenLength - self.pieceTopMargin
             x = col * self.colWidth
+            # prevent overlapping
             if (self.placeValid(col, y0, y1, self.attacksDict) and
                 self.placeValid(col, y0, y1, self.tokensDict)):
                 newAttack = Attack(col, False, x, y0, y1)
                 self.attacksDict[col].append(newAttack)
                 count += 1
 
+    # return True if gamepiece can be placed
     def placeValid(self, col, y0, y1, piecesDict):
         colsList = [i for i in range(self.cols)]
         colsList.remove(col)
@@ -162,9 +180,12 @@ class Gameboard(object):
                     return False
         return True
 
+    # return True if two rectangles intersect
     def verticallyIntersecting(self, y0, y1, y2, y3):
         return not (y0 <= y3 or y1 >= y2)
 
+    # check all gamepieces if they've been pressed, change stats, and 
+    # return True if an attack was hit for multiplayer
     def checkAllPressedPieces(self, col):
         y0 = self.lineY
         y1 = self.lineY - self.smallestLength
@@ -185,11 +206,7 @@ class Gameboard(object):
             self.noHits += 1
         return hitAttack
 
-    # def checkPressedAttack(self, col):
-    #     y0 = self.lineY
-    #     y1 = self.lineY - self.smallestLength
-    #     return self.checkPressedPiece(self.attacksDict[col], y0, y1)
-
+    # return True if that type of gamepiece was pressed
     def checkPressedPiece(self, colList, y0, y1):
         hitPiece = False
         for piece in colList:

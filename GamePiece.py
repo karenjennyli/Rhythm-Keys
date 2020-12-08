@@ -1,3 +1,7 @@
+# contains GamePiece class, Target, Token, Obstacle, and Attack subclasses
+# they are types of gamepieces that are a part of a gameboard
+
+# Gamepiece class
 class GamePiece(object):
     def __init__(self, col, pressed, x, y0, y1):
         self.col = col
@@ -12,6 +16,7 @@ class GamePiece(object):
     def __hash__(self):
         return hash((self.col, self.pressed, self.x, self.y0, self.y1))
 
+# Target class
 class Target(GamePiece):
     def __init__(self, col, pressed, x, y0, y1, pitch):
         super().__init__(col, pressed, x, y0, y1)
@@ -24,14 +29,17 @@ class Target(GamePiece):
     def __hash__(self):
         return hash((self.col, self.pressed, self.x, self.y0, self.y1, self.pitch))
 
+# Token class
 class Token(GamePiece):
     def __init__(self, col, pressed, x, y0, y1):
         super().__init__(col, pressed, x, y0, y1)
 
+# Obstacle class
 class Obstacle(GamePiece):
     def __init__(self, col, pressed, x, y0, y1):
         super().__init__(col, pressed, x, y0, y1)
 
+# Attack class
 class Attack(GamePiece):
     def __init__(self, col, pressed, x, y0, y1):
         super().__init__(col, pressed, x, y0, y1)

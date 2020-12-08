@@ -1,19 +1,24 @@
+# PresetGameboard is a subclass of Gameboard that itializes the 
+# gameboard pieces (based off of text file rather than midi file)
+
 from music21 import *
 import random
 from GamePiece import Target, Token, Obstacle, Attack
 from Gameboard import Gameboard
 
+# PresetGameboard class
 class PresetGameboard(Gameboard):
     def __init__(self, players):
         super().__init__(players)
 
+    # set difficulty of gameboard
     def setDifficulty(self, difficulty):
         self.difficulty = difficulty
         self.maxNotes = difficulty
         self.beatLength *= (self.difficulty + 1) / 3
 
+    # initialize gameboard pieces
     def initGamePieces(self, grid):
-        print(grid)
         self.targetsHit = 0
         self.noHits = 0
         self.tokensCollected = 0
@@ -25,6 +30,7 @@ class PresetGameboard(Gameboard):
         if self.players > 1:
             self.initAttacks(grid)
         
+    # itialize targets based on grid
     def initTargets(self, grid):
         self.totalTargets = 0
         self.smallestLength = self.targetLength
@@ -50,7 +56,7 @@ class PresetGameboard(Gameboard):
                 self.targetsDict[col].append(newTarget)
                 self.totalTargets += 1
 
-
+    # initialize tokens based on grid
     def initTokens(self, grid):
         self.tokensDict = dict()
         for i in range(self.cols):
@@ -68,6 +74,7 @@ class PresetGameboard(Gameboard):
                 newToken = Target(col, False, x, y0, y1, None)
                 self.tokensDict[col].append(newToken)
     
+    # initialize obstacles based on grid
     def initObstacles(self, grid):
         self.obstaclesDict = dict()
         for i in range(self.cols):
@@ -85,6 +92,7 @@ class PresetGameboard(Gameboard):
                 newObstacle = Obstacle(col, False, x, y0, y1, None)
                 self.obstaclesDict[col].append(newObstacle)
     
+    # initialize attacks based on grid
     def initAttacks(self, grid):
         self.attacksDict = dict()
         for i in range(self.cols):

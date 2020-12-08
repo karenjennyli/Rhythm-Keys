@@ -1,3 +1,6 @@
+# CreateMode class: a mode that allows the player to create and save 
+# a gameboard using different notes, tokens, obstacles, and attacks
+
 from cmu_112_graphics import *
 from music21 import *
 import pygame, os
@@ -10,7 +13,7 @@ class CreateMode(Mode):
         mode.initDimensions()
         mode.initBackground()
         mode.initButtonDimensions()
-        mode.initPallete()
+        mode.initPalette()
         mode.initGrid()
         mode.initPageButtons()
         mode.initNoteSounds()
@@ -18,6 +21,7 @@ class CreateMode(Mode):
     def modeActivated(mode):
         mode.appStarted()
 
+    # initialize the music grid
     def initGrid(mode):
         mode.pages = 1
         mode.grid = dict()
@@ -25,9 +29,11 @@ class CreateMode(Mode):
             mode.grid[col] = ['0' for i in range(mode.pageLength)]
         mode.currentPage = 0
     
+    # buttons to change current page
     def initPageButtons(mode):
         pass
         
+    # initialize the different note sounds
     def initNoteSounds(mode):
         pygame.init()
         mode.soundsDict = dict()
@@ -44,13 +50,14 @@ class CreateMode(Mode):
         mode.soundsDict['A#'] = pygame.mixer.Sound("mp3 Notes/a-5.mp3")
         mode.soundsDict['B'] = pygame.mixer.Sound("mp3 Notes/b5.mp3")
 
+    # add a new page to the grid
     def newPage(mode):
         mode.pages += 1
         for col in range(mode.cols):
             newList = ['0' for i in range(mode.pageLength)]
             mode.grid[col].extend(newList)
     
-    # remove None's that aren't necessary at the end of the grid
+    # remove empty grid cells at the end of the grid
     def removeWhiteSpace(mode):
         gridLength = len(mode.grid[0])
         i = gridLength - 1
@@ -66,8 +73,9 @@ class CreateMode(Mode):
                     colList = mode.grid[col]
                     colList.pop()
                 i -= 1
-
-    def initPallete(mode):
+    
+    # creates the note "Palette" at the top of the screen
+    def initPalette(mode):
         mode.colors = ['maroon',
                   'violet red',
                   'red',
@@ -89,9 +97,9 @@ class CreateMode(Mode):
             color = mode.colors[i]
             mode.notesDict[note] = color
         for i in range(len(mode.colors)):
-            x0 = mode.palleteSideOffset + i * mode.colorWidth
+            x0 = mode.PaletteSideOffset + i * mode.colorWidth
             x1 = x0 + mode.colorWidth
-            y0 = mode.palleteTopOffset
+            y0 = mode.PaletteTopOffset
             y1 = y0 + mode.colorHeight
             note = mode.notes[i]
             color = mode.colors[i]
@@ -99,6 +107,7 @@ class CreateMode(Mode):
         
         mode.currentNote = 'C'
 
+    # button dimensions
     def initButtonDimensions(mode):
         mode.buttonWidth = mode.buttonHeight = 40
         mode.bx0 = 10
@@ -106,6 +115,11 @@ class CreateMode(Mode):
         mode.by0 = 10
         mode.by1 = mode.by0 + mode.buttonHeight
         mode.homeButton = mode.loadImage("pictures/home.png")
+
+    # plays the current song on the grid
+    def playGrid(mode):
+        pass
+        # play mode
 
     def keyPressed(mode, event):
         if event.key == 'Left' and mode.currentPage > 0:
@@ -120,18 +134,22 @@ class CreateMode(Mode):
             mode.saving = True
             mode.createMidi()
             mode.createTxt()
+        elif event.key == 'p':
+            mode.playGrid()
 
     def mousePressed(mode, event):
         x, y = event.x, event.y
         mode.checkPressedButtons(x, y)
-        mode.checkPressedPallete(x, y)
+        mode.checkPressedPalette(x, y)
         mode.checkPressedGrid(x, y)
 
+    # check if home button is pressed
     def checkPressedButtons(mode, x, y):
         if mode.bx0 < x < mode.bx1 and mode.by0 < y < mode.by1:
             mode.app.setActiveMode(mode.app.HomeMode)
 
-    def checkPressedPallete(mode, x, y):
+    # check if note Palette is pressed
+    def checkPressedPalette(mode, x, y):
         for note in mode.colorCoords:
             x0, y0, x1, y1, color = mode.colorCoords[note]
             if x0 < x < x1 and y0 < y < y1:
@@ -139,7 +157,7 @@ class CreateMode(Mode):
                 sound = mode.soundsDict[note]
                 pygame.mixer.Sound.play(sound)
                 return
-
+    # check if grid is pressed
     def checkPressedGrid(mode, x, y):
         col = int((y - mode.gridTopOffset) // mode.colorHeight)
         row = int((x - mode.gridSideOffset) // mode.colorWidth)
@@ -151,6 +169,7 @@ class CreateMode(Mode):
         colList = mode.grid[col]
         colList[row] = mode.currentNote
 
+    # create and save a midi file from the current grid
     def createMidi(mode):
         mode.removeWhiteSpace()
         if mode.grid[0] == []:
@@ -187,6 +206,7 @@ class CreateMode(Mode):
         mode.stream.write('midi', 'music/' + mode.songName + '.mid')
         mode.finished = True
 
+    # create and save a text file for the gameboard on the grid
     def createTxt(mode):
         if mode.grid[0] == [] or mode.songName == None:
             return
@@ -197,32 +217,38 @@ class CreateMode(Mode):
                 text += note + ' '
             text += '\n'
         text = text[:-1]
+        # referenced for writing files
         # https://www.geeksforgeeks.org/create-an-empty-file-using-python/
         path = 'grids'
         file = mode.songName + '.txt'
         with open(os.path.join(path, file), 'w') as fp:
             fp.write(text)
 
+    # draw home buttpn
     def drawButtons(mode, canvas):
         textX, textY = (mode.bx0 + mode.bx1) / 2, (mode.by0 + mode.by1) / 2
         canvas.create_image(textX, textY, image=ImageTk.PhotoImage(mode.homeButton))
 
+    # get the background image
     def initBackground(mode):
         # image from https://www.mobilebeat.com/wp-content/uploads/2016/07/Background-Music-768x576-1280x720.jpg
         mode.background = mode.scaleImage(mode.loadImage("pictures/homebackground.png"), 1/2)
     
+    # create mode dimensions
     def initDimensions(mode):
         mode.cols = 5
         mode.pageLength = 24
         mode.colorWidth = mode.colorHeight = (mode.width - 25) / mode.pageLength
         mode.gridTopOffset = mode.height / 2 - mode.colorHeight * mode.cols / 2
         mode.gridSideOffset = mode.width / 2 - mode.colorWidth * mode.pageLength / 2
-        mode.palleteSideOffset = 300
-        mode.palleteTopOffset = 10
+        mode.PaletteSideOffset = 300
+        mode.PaletteTopOffset = 10
 
+    # draw background image
     def drawBackground(mode, canvas):
         canvas.create_image(mode.width / 2, mode.height / 2, image=ImageTk.PhotoImage(mode.background))
 
+    # draw note palette at top of screen
     def drawPalette(mode, canvas):
         for note in mode.colorCoords:
             x0, y0, x1, y1, color = mode.colorCoords[note]
@@ -231,6 +257,7 @@ class CreateMode(Mode):
             textY = (y0 + y1) / 2
             canvas.create_text(textX, textY, text=note, fill='white', font='System 18 bold')
 
+    # draw grid with all the notes, tokens, other objects, etc
     def drawGrid(mode, canvas):
         start = mode.currentPage * mode.pageLength
         end = start + mode.pageLength
@@ -256,6 +283,7 @@ class CreateMode(Mode):
                 textY = (y0 + y1) / 2
                 canvas.create_text(textX, textY, text=labelText, fill='white', font='System 18 bold')
     
+    # draw current note/object selected from palette
     def drawCursor(mode, canvas):
         x1 = mode.width
         x0 = x1 - mode.colorWidth
@@ -267,11 +295,13 @@ class CreateMode(Mode):
         textY = (y0 + y1) / 2
         canvas.create_text(textX, textY, text=mode.currentNote, fill='white', font='System 18 bold')
 
+    # draw the current page of the grid
     def drawCurrentPage(mode, canvas):
         textX = mode.width / 2
         textY = mode.gridTopOffset - 25
         canvas.create_text(textX, textY, text=f'Page {mode.currentPage + 1} of {mode.pages}', fill='white', font='System 18 bold')
 
+    # draw message to tell user there are no notes added to the grid
     def drawNoNotesMessage(mode, canvas):
         boxWidth = 400
         boxHeight = 200
@@ -283,6 +313,7 @@ class CreateMode(Mode):
         canvas.create_text(mode.width / 2, mode.height / 2 - 15, text=f'No notes to create a song.', fill='white', font='System 18 bold')
         canvas.create_text(mode.width / 2, mode.height / 2 + 15, text=f'Press "n" to create new song.', fill='white', font='System 18 bold')
 
+    # draw message that midi and text files were saved
     def drawFinishedMessage(mode, canvas):
         boxWidth = 400
         boxHeight = 200
