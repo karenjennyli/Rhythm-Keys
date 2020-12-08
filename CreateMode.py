@@ -1,10 +1,9 @@
 from cmu_112_graphics import *
 from music21 import *
-import pygame
+import pygame, os
 
 class CreateMode(Mode):
     def appStarted(mode):
-        
         mode.finished = False
         mode.saving = False
         mode.noNotesMessage = False
@@ -23,7 +22,7 @@ class CreateMode(Mode):
         mode.pages = 1
         mode.grid = dict()
         for col in range(mode.cols):
-            mode.grid[col] = [None for i in range(mode.pageLength)]
+            mode.grid[col] = ['0' for i in range(mode.pageLength)]
         mode.currentPage = 0
     
     def initPageButtons(mode):
@@ -48,7 +47,7 @@ class CreateMode(Mode):
     def newPage(mode):
         mode.pages += 1
         for col in range(mode.cols):
-            newList = [None for i in range(mode.pageLength)]
+            newList = ['0' for i in range(mode.pageLength)]
             mode.grid[col].extend(newList)
     
     # remove None's that aren't necessary at the end of the grid
@@ -59,7 +58,7 @@ class CreateMode(Mode):
         while not containsNotes and i >= 0:
             for col in mode.grid:
                 colList = mode.grid[col]
-                if colList[i] != None:
+                if colList[i] != '0':
                     containsNotes = True
                     return
             if not containsNotes:
@@ -120,6 +119,7 @@ class CreateMode(Mode):
         elif event.key == 'd':
             mode.saving = True
             mode.createMidi()
+            mode.createTxt()
 
     def mousePressed(mode, event):
         x, y = event.x, event.y
@@ -157,7 +157,7 @@ class CreateMode(Mode):
             mode.noNotesMessage = True
             return
         mode.songName = None
-        while mode.songName == None or mode.songName in os.listdir('music'):
+        while mode.songName == None or (mode.songName + '.mid' in os.listdir('music')):
             mode.songName = mode.getUserInput('Enter valid song name.')
             if mode.songName == None:
                 return
@@ -169,7 +169,7 @@ class CreateMode(Mode):
                 elem = colList[i]
                 notes.add(elem)
             notesList = list(notes)
-            if notesList == [None]:
+            if notesList == ['0']:
                 newNote = note.Rest(type='eighth') # add a rest if there's no notes
             elif len(notesList) == 1:
                 elem = notesList[0]
@@ -178,7 +178,7 @@ class CreateMode(Mode):
             else:
                 chordList = []
                 for elem in notesList:
-                    if elem != None:
+                    if elem != '0':
                         noteNotation = elem + '4'
                         chordList.append(noteNotation)
                 newNote = chord.Chord(chordList, type='eighth')
@@ -186,6 +186,22 @@ class CreateMode(Mode):
         midiFromStream = midi.translate.streamToMidiFile(mode.stream)
         mode.stream.write('midi', 'music/' + mode.songName + '.mid')
         mode.finished = True
+
+    def createTxt(mode):
+        if mode.grid[0] == [] or mode.songName == None:
+            return
+        text = ''
+        for col in mode.grid:
+            colList = mode.grid[col]
+            for note in colList:
+                text += note + ' '
+            text += '\n'
+        text = text[:-1]
+        # https://www.geeksforgeeks.org/reading-writing-text-files-python/
+        path = 'grids'
+        file = mode.songName + '.txt'
+        with open(os.path.join(path, file), 'w') as fp:
+            fp.write(text)
 
     def drawButtons(mode, canvas):
         textX, textY = (mode.bx0 + mode.bx1) / 2, (mode.by0 + mode.by1) / 2
@@ -229,7 +245,7 @@ class CreateMode(Mode):
                 y0 = mode.gridTopOffset + col * mode.colorHeight
                 y1 = y0 + mode.colorHeight
                 note = colList[index]
-                if note == None:
+                if note == '0':
                     color = 'black'
                     labelText = ''
                 else:

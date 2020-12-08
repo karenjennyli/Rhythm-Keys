@@ -14,5 +14,8 @@ class MyModalApp(ModalApp):
         app.setActiveMode(app.CreateMode)
         app.gameboards = dict()
         # write class CreateModeSong so we can save a list of Song objects so user can edit songs later
+    
+    # def getGameBoards(app):
+
 
 app = MyModalApp(width=1000, height=600)

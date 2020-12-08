@@ -10,6 +10,7 @@ class PlayMode(Mode):
     def appStarted(mode):
         mode.initBackground()
         mode.getSongOptions()
+        mode.createModeSong = False
         mode.activated = True
         mode.readyToPlay = False
         mode.displayParts = False
@@ -149,28 +150,32 @@ class PlayMode(Mode):
     # select music part
     def getScorePart(mode):
         mode.parts = mode.musicScore.parts
-        mode.partsSet = False
-        mode.displayParts = True
-        invalid = False
-        while not mode.partsSet:
+        if mode.createModeSong: # use all the parts(there's probably only going to be one)
+            partIndices = [i for i in range(len(mode.parts))]
+            mode.partsSet = True
+        else:
+            mode.partsSet = False
+            mode.displayParts = True
             invalid = False
-            inputString = mode.getUserInput('Enter part numbers separated by a comma.')
-            if inputString == None:
-                return
-            try:
-                inputList = inputString.split(',')
-                partIndices = []
-                for elem in inputList:
-                    partIndex = int(elem)
-                    if 0 <= partIndex < len(mode.parts) and partIndex not in partIndices:
-                        partIndices.append(partIndex)
+            while not mode.partsSet:
+                invalid = False
+                inputString = mode.getUserInput('Enter part numbers separated by a comma.')
+                if inputString == None:
+                    return
+                try:
+                    inputList = inputString.split(',')
+                    partIndices = []
+                    for elem in inputList:
+                        partIndex = int(elem)
+                        if 0 <= partIndex < len(mode.parts) and partIndex not in partIndices:
+                            partIndices.append(partIndex)
 
-                    else:
-                        invalid = True
-            except:
-                continue
-            if not invalid:
-                mode.partsSet = True
+                        else:
+                            invalid = True
+                except:
+                    continue
+                if not invalid:
+                    mode.partsSet = True
         mode.partsNotes = []
         for index in partIndices:
             mode.partsNotes.append(mode.parts[index].flat)
@@ -412,9 +417,6 @@ class PlayMode(Mode):
                 canvas.create_text(textX, textY + 15, text=f'{gameboard.score}', fill='white', font='System 18 bold')
 
     def drawSongOptions(mode, canvas):
-        # canvas.create_text(mode.width / 2, mode.height / 2, text='choose from the songs in terminal', fill='white')
-        # for i in range(len(mode.filesInFolder)):
-        #     print(f'{i}: {mode.filesInFolder[i]}')
         startY = 100
         canvas.create_text(mode.width / 2, startY, text='Song Options', fill='white', font='System 36 bold')
         startY += 50
