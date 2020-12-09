@@ -34,6 +34,7 @@ class CreateMode(Mode):
             mode.grid[col] = ['0' for i in range(mode.pageLength)]
         mode.currentPage = 0
     
+    # retrieve grid from text file
     def getGrid(mode):
         index = None
         while index == None or index not in range(len(mode.filesInFolder)):
@@ -129,18 +130,20 @@ class CreateMode(Mode):
     def initNoteSounds(mode):
         pygame.init()
         mode.soundsDict = dict()
-        mode.soundsDict['C'] = pygame.mixer.Sound("mp3 Notes/c4.mp3")
-        mode.soundsDict['C#'] = pygame.mixer.Sound("mp3 Notes/c-4.mp3")
-        mode.soundsDict['D'] = pygame.mixer.Sound("mp3 Notes/d4.mp3")
-        mode.soundsDict['D#'] = pygame.mixer.Sound("mp3 Notes/d-4.mp3")
-        mode.soundsDict['E'] = pygame.mixer.Sound("mp3 Notes/e4.mp3")
-        mode.soundsDict['F'] = pygame.mixer.Sound("mp3 Notes/f4.mp3")
-        mode.soundsDict['F#'] = pygame.mixer.Sound("mp3 Notes/f-4.mp3")
-        mode.soundsDict['G'] = pygame.mixer.Sound("mp3 Notes/g4.mp3")
-        mode.soundsDict['G#'] = pygame.mixer.Sound("mp3 Notes/g-4.mp3")
-        mode.soundsDict['A'] = pygame.mixer.Sound("mp3 Notes/a5.mp3")
-        mode.soundsDict['A#'] = pygame.mixer.Sound("mp3 Notes/a-5.mp3")
-        mode.soundsDict['B'] = pygame.mixer.Sound("mp3 Notes/b5.mp3")
+        # audio files from:
+        # https://www.reddit.com/r/piano/comments/3u6ke7/heres_some_midi_and_mp3_files_for_individual/
+        mode.soundsDict['C'] = pygame.mixer.Sound("mp3 notes/c4.mp3")
+        mode.soundsDict['C#'] = pygame.mixer.Sound("mp3 notes/c-4.mp3")
+        mode.soundsDict['D'] = pygame.mixer.Sound("mp3 notes/d4.mp3")
+        mode.soundsDict['D#'] = pygame.mixer.Sound("mp3 notes/d-4.mp3")
+        mode.soundsDict['E'] = pygame.mixer.Sound("mp3 notes/e4.mp3")
+        mode.soundsDict['F'] = pygame.mixer.Sound("mp3 notes/f4.mp3")
+        mode.soundsDict['F#'] = pygame.mixer.Sound("mp3 notes/f-4.mp3")
+        mode.soundsDict['G'] = pygame.mixer.Sound("mp3 notes/g4.mp3")
+        mode.soundsDict['G#'] = pygame.mixer.Sound("mp3 notes/g-4.mp3")
+        mode.soundsDict['A'] = pygame.mixer.Sound("mp3 notes/a5.mp3")
+        mode.soundsDict['A#'] = pygame.mixer.Sound("mp3 notes/a-5.mp3")
+        mode.soundsDict['B'] = pygame.mixer.Sound("mp3 notes/b5.mp3")
 
     # add a new page to the grid
     def newPage(mode):
