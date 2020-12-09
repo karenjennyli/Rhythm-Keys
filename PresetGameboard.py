@@ -38,7 +38,8 @@ class PresetGameboard(Gameboard):
         self.targetsDict = dict()
         for i in range(self.cols):
             self.targetsDict[i] = []
-        self.notes = {'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'}
+        self.notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+        midiOffset = 60
         for i in range(len(grid[0])):
             for col in grid:
                 colList = grid[col]
@@ -52,7 +53,8 @@ class PresetGameboard(Gameboard):
                 if y1 < self.minY:
                     self.minY = y1
                 x = col * self.colWidth
-                newTarget = Target(col, False, x, y0, y1, None)
+                pitch = self.notes.index(msg) + midiOffset
+                newTarget = Target(col, False, x, y0, y1, pitch)
                 self.targetsDict[col].append(newTarget)
                 self.totalTargets += 1
 

@@ -3,19 +3,23 @@
 
 from cmu_112_graphics import *
 from music21 import *
-import pygame, os
+import pygame, os, time
 
 class CreateMode(Mode):
     def appStarted(mode):
+        mode.timerDelay = 10
         mode.finished = False
         mode.saving = False
         mode.noNotesMessage = False
+        mode.bpm = 120
+        mode.timeInterval = 60 * 1000 / mode.bpm / 2
+        mode.playing = False
         mode.initDimensions()
         mode.initBackground()
         mode.initButtonDimensions()
         mode.initPalette()
         mode.initGrid()
-        mode.initPageButtons()
+        mode.initCreateButtons()
         mode.initNoteSounds()
     
     def modeActivated(mode):
@@ -30,9 +34,49 @@ class CreateMode(Mode):
         mode.currentPage = 0
     
     # buttons to change current page
-    def initPageButtons(mode):
-        pass
+    def initCreateButtons(mode):
+        # buttons: new, open, save, play/stop, left, right
+        mode.buttonText = ['New', 'Open', 'Save', 'Play', '←', '→']
+        mode.buttonCoords = []
+        width = 75
+        height = 35
+        margin = 20
+        sideOffset = mode.width / 2 - margin / 2 - width - margin - width
+        topOffset = 100
+        numberOfButtons = 4
+        for i in range(numberOfButtons):
+            bx0 = sideOffset + i * width + margin * i
+            bx1 = bx0 + width
+            by0 = topOffset
+            by1 = topOffset + height
+            mode.buttonCoords.append((bx0, bx1, by0, by1))
+        width = height = 25
+        bx0 = mode.width / 4 + 10
+        bx1 = bx0 + width
+        by0 = mode.gridTopOffset - 35
+        by1 = by0 + height
+        mode.buttonCoords.append((bx0, bx1, by0, by1))
+        bx1 = mode.width * 3 / 4 - 10
+        bx0 = bx1 - width
+        mode.buttonCoords.append((bx0, bx1, by0, by1))
+
+    def drawCreateButtons(mode, canvas):
+        for i in range(len(mode.buttonCoords)):
+            bx0, bx1, by0, by1 = mode.buttonCoords[i]
+            canvas.create_rectangle(bx0, by0, bx1, by1, fill='black', outline='white', width=3)
+            textX, textY = (bx0 + bx1) / 2, (by0 + by1) / 2
+            if mode.buttonText[i] == 'Play' and mode.playing:
+                mode.buttonText[i] = 'Stop'
+            elif mode.buttonText[i] == 'Stop' and not mode.playing:
+                mode.buttonText[i] = 'Play'
+            canvas.create_text(textX, textY, text=mode.buttonText[i], font='System 18 bold', fill='white')
         
+    def checkPressedCreateButtons(mode, x, y):
+        for i in range(len(mode.buttonCoords)):
+            bx0, bx1, by0, by1 = mode.buttonCoords[i]
+            if bx0 < x < bx1 and by0 < y < by1:
+                mode.app.setActiveMode(mode.buttonModes[i])
+
     # initialize the different note sounds
     def initNoteSounds(mode):
         pygame.init()
@@ -120,16 +164,56 @@ class CreateMode(Mode):
 
     # plays the current song on the grid
     def playGrid(mode):
-        pass
-        # play mode
+        if not mode.getMusicStream():
+            return
+        mode.playing = True
+        mode.currentIndex = 0
+        mode.startTime = time.time()
+
+    def getMusicStream(mode):
+        mode.stream = []
+        containsNotes = False
+        for i in range(len(mode.grid[0])):
+            notes = set()
+            for col in mode.grid:
+                colList = mode.grid[col]
+                elem = colList[i]
+                if elem in mode.gamepieces:
+                    continue
+                notes.add(elem)
+            notesList = list(notes)
+            if '0' in notesList:
+                notesList.remove('0')
+            if notesList == []:
+                mode.stream.append([])
+            else:
+                mode.stream.append(notesList)
+                containsNotes = True
+        mode.playedOrNot = [False for i in range(len(mode.stream))]
+        return containsNotes
+
+    def timerFired(mode):
+        if mode.playing:
+            dt = time.time() - mode.startTime
+            mode.currentIndex = int(dt * 1000 / mode.timeInterval)
+            if mode.currentIndex >= mode.pages * mode.pageLength:
+                mode.playing = False
+                return
+            if not mode.playedOrNot[mode.currentIndex]:
+                mode.playedOrNot[mode.currentIndex] = True
+                for note in mode.stream[mode.currentIndex]:
+                    sound = mode.soundsDict[note]
+                    pygame.mixer.Sound.play(sound)
 
     def keyPressed(mode, event):
         if event.key == 'Left' and mode.currentPage > 0:
             mode.currentPage -= 1
         elif event.key == 'Right':
             mode.currentPage += 1
-            if mode.currentPage >= mode.pages:
+            if mode.currentPage >= mode.pages and not mode.playing:
                 mode.newPage()
+            elif mode.currentPage >= mode.pages:
+                mode.currentPage -= 1
         elif event.key == 'n':
             mode.appStarted()
         elif event.key == 'd':
@@ -138,12 +222,15 @@ class CreateMode(Mode):
             mode.createTxt()
         elif event.key == 'p':
             mode.playGrid()
+        elif event.key == 's':
+            mode.playing = False
 
     def mousePressed(mode, event):
         x, y = event.x, event.y
         mode.checkPressedButtons(x, y)
         mode.checkPressedPalette(x, y)
         mode.checkPressedGrid(x, y)
+        # mode.checkPressedCreateButtons(x, y)
 
     # check if home button is pressed
     def checkPressedButtons(mode, x, y):
@@ -186,7 +273,8 @@ class CreateMode(Mode):
             mode.noNotesMessage = True
             return
         mode.songName = None
-        while mode.songName == None or (mode.songName + '.mid' in os.listdir('music')):
+        # while mode.songName == None or (mode.songName + '.mid' in os.listdir('music')):
+        while mode.songName == None:
             mode.songName = mode.getUserInput('Enter valid song name.')
             if mode.songName == None:
                 return
@@ -262,7 +350,7 @@ class CreateMode(Mode):
         mode.gridSideOffset = mode.width / 2 - mode.colorWidth * mode.pageLength / 2
         mode.numberOfLetters = 16
         mode.PaletteSideOffset = mode.width / 2 - mode.colorWidth * mode.numberOfLetters / 2
-        mode.PaletteTopOffset = 10
+        mode.PaletteTopOffset = 20
 
     # draw background image
     def drawBackground(mode, canvas):
@@ -275,7 +363,15 @@ class CreateMode(Mode):
             canvas.create_rectangle(x0, y0, x1, y1, fill=color, outline='white', width=3)
             textX = (x0 + x1) / 2
             textY = (y0 + y1) / 2
-            canvas.create_text(textX, textY, text=note, fill='white', font='System 18 bold')
+            if note == 'X':
+                continue
+            elif note == 'T':
+                color = 'gold'
+            else:
+                color = 'white'
+            canvas.create_text(textX, textY, text=note, fill=color, font='System 18 bold')
+        x0, y0, x1, y1, color = mode.colorCoords[mode.currentNote]
+        canvas.create_rectangle(x0, y0, x1, y1, outline='white', width=6)
 
     # draw grid with all the notes, tokens, other objects, etc
     def drawGrid(mode, canvas):
@@ -301,25 +397,17 @@ class CreateMode(Mode):
                 canvas.create_rectangle(x0, y0, x1, y1, fill=color, outline='white', width=3)
                 textX = (x0 + x1) / 2
                 textY = (y0 + y1) / 2
-                canvas.create_text(textX, textY, text=labelText, fill='white', font='System 18 bold')
+                if note == 'T':
+                    textColor = 'gold'
+                else:
+                    textColor = 'white'
+                canvas.create_text(textX, textY, text=labelText, fill=textColor, font='System 18 bold')
     
-    # draw current note/object selected from palette
-    def drawCursor(mode, canvas):
-        x1 = mode.width
-        x0 = x1 - mode.colorWidth
-        y0 = 0
-        y1 = y0 + mode.colorHeight
-        color = mode.notesDict[mode.currentNote]
-        canvas.create_rectangle(x0, y0, x1, y1, fill=color, outline='white', width=3)
-        textX = (x0 + x1) / 2
-        textY = (y0 + y1) / 2
-        canvas.create_text(textX, textY, text=mode.currentNote, fill='white', font='System 18 bold')
-
     # draw the current page of the grid
     def drawCurrentPage(mode, canvas):
         textX = mode.width / 2
-        textY = mode.gridTopOffset - 25
-        canvas.create_text(textX, textY, text=f'Page {mode.currentPage + 1} of {mode.pages}', fill='white', font='System 18 bold')
+        textY = mode.gridTopOffset - 35
+        canvas.create_text(textX, textY, text=f'Page {mode.currentPage + 1} of {mode.pages}', fill='white', font='System 24 bold', anchor='n')
 
     # draw message to tell user there are no notes added to the grid
     def drawNoNotesMessage(mode, canvas):
@@ -345,15 +433,22 @@ class CreateMode(Mode):
         canvas.create_text(mode.width / 2, mode.height / 2 - 15, text=f'{mode.songName} added to music library!', fill='white', font='System 18 bold')
         canvas.create_text(mode.width / 2, mode.height / 2 + 15, text=f'Press "n" to create new song.', fill='white', font='System 18 bold')
 
+    def drawHelp(mode, canvas):
+        msg = '"n" for new grid, "o" to open a saved grid, "d" to save grid and song'
+        msg1 = 'arrow keys to navigate through pages'
+        style = 'System 18 bold italic'
+        canvas.create_text(mode.width / 2, mode.height - 40, text=msg, font=style)
+        canvas.create_text(mode.width / 2, mode.height - 20, text=msg1, font=style)
+
     def redrawAll(mode, canvas):
         canvas.create_rectangle(0, 0, mode.width, mode.height, fill='black')
         mode.drawBackground(canvas)
         mode.drawButtons(canvas)
         mode.drawPalette(canvas)
+        mode.drawCreateButtons(canvas)
         if not mode.saving:
             mode.drawGrid(canvas)
             mode.drawCurrentPage(canvas)
-        mode.drawCursor(canvas)
         if mode.noNotesMessage:
             mode.drawNoNotesMessage(canvas)
         if mode.finished:

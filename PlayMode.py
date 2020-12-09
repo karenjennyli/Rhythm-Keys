@@ -489,9 +489,15 @@ class PlayMode(Mode):
             song = fileName.split('.')[0]
             textFileName = song + '.txt'
             if textFileName in os.listdir('gameboards'):
-                song += ' **this song uses a preset gameboard**'
+                style = 'System 18 bold italic'
+                song = '* ' + song
+            else:
+                style = 'System 18 bold'
             canvas.create_text(numberX, startY + intervalY * i, text=str(i), anchor='w', fill='white', font='System 18 bold')
-            canvas.create_text(songX, startY + intervalY * i, text=song, anchor='w', fill='white', font='System 18 bold')
+            canvas.create_text(songX, startY + intervalY * i, text=song, anchor='w', fill='white', font=style)
+        textX = mode.width / 2
+        textY = mode.height - 10
+        canvas.create_text(textX, textY, text='Italicized titles with * have a preset gameboard.', anchor='s', font='System 18 bold italic', fill='white')
 
     # get all the names of the files in the music folder
     def getSongOptions(mode):
