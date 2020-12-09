@@ -1,5 +1,6 @@
 # CreateMode class: a mode that allows the player to create and save 
 # a gameboard using different notes, tokens, obstacles, and attacks
+# User can also open existing gameboards/grids
 
 from cmu_112_graphics import *
 from music21 import *
@@ -12,7 +13,7 @@ class CreateMode(Mode):
         mode.saving = False
         mode.noNotesMessage = False
         mode.bpm = 120
-        mode.timeInterval = 60 * 1000 / mode.bpm / 2
+        mode.timeInterval = 60 * 1000 / mode.bpm / 2 # since each is 1/8 note
         mode.playing = False
         mode.displayFiles = False
         mode.initDimensions()
@@ -26,43 +27,38 @@ class CreateMode(Mode):
     def modeActivated(mode):
         mode.appStarted()
 
-    # initialize the music grid
-    def initGrid(mode):
-        mode.pages = 1
-        mode.grid = dict()
-        for col in range(mode.cols):
-            mode.grid[col] = ['0' for i in range(mode.pageLength)]
-        mode.currentPage = 0
-    
-    # retrieve grid from text file
-    def getGrid(mode):
-        index = None
-        while index == None or index not in range(len(mode.filesInFolder)):
-            inputString = mode.getUserInput('Enter grid number.')
-            if inputString == None:
-                mode.displayFiles = False
-                return
-            try:
-                index = int(inputString)
-            except:
-                continue
-        textFileName = 'gameboards/' + mode.filesInFolder[index]
-        textFile = open(textFileName, 'r')
-        textGrid = textFile.read()
-        gridList = textGrid.splitlines()
-        mode.grid = dict()
-        for i in range(len(gridList)):
-            mode.grid[i] = gridList[i].split(' ')
-            mode.grid[i].pop()
-        mode.pages = len(mode.grid[0]) // mode.pageLength + 1
-        mode.currentPage = 0
-        missingRows = mode.pageLength - len(mode.grid[0]) % mode.pageLength
-        newRows = ['0' for i in range(missingRows)]
-        for col in mode.grid:
-            mode.grid[col].extend(newRows)
-        mode.displayFiles = False
+    ###############################################
+    # Initializing
+    ###############################################
 
-    # buttons to change current page
+    # create mode dimensions
+    def initDimensions(mode):
+        mode.cols = 5
+        mode.pageLength = 24
+        mode.colorWidth = mode.colorHeight = (mode.width - 25) / mode.pageLength
+        mode.eraserLength = mode.colorWidth * 0.9
+        mode.gridTopOffset = mode.height / 2 - mode.colorHeight * mode.cols / 2
+        mode.gridSideOffset = mode.width / 2 - mode.colorWidth * mode.pageLength / 2
+        mode.numberOfLetters = 16
+        mode.PaletteSideOffset = mode.width / 2 - mode.colorWidth * mode.numberOfLetters / 2
+        mode.PaletteTopOffset = 20
+
+    # get the background image
+    def initBackground(mode):
+        # image from https://www.mobilebeat.com/wp-content/uploads/2016/07/Background-Music-768x576-1280x720.jpg
+        mode.background = mode.scaleImage(mode.loadImage("pictures/homebackground.png"), 1/2)
+    
+    # button dimensions
+    def initButtonDimensions(mode):
+        mode.buttonWidth = mode.buttonHeight = 40
+        mode.bx0 = 10
+        mode.bx1 = mode.bx0 + mode.buttonWidth
+        mode.by0 = 10
+        mode.by1 = mode.by0 + mode.buttonHeight
+        # https://www.flaticon.com/
+        mode.homeButton = mode.loadImage("pictures/home.png")
+
+    # create mode buttons
     def initCreateButtons(mode):
         # buttons: new, open, save, play/stop, left, right
         mode.buttonText = ['New', 'Open', 'Save', 'Play', '←', '→']
@@ -89,86 +85,6 @@ class CreateMode(Mode):
         bx0 = bx1 - width
         mode.buttonCoords.append((bx0, bx1, by0, by1))
 
-    def drawCreateButtons(mode, canvas):
-        for i in range(len(mode.buttonCoords)):
-            bx0, bx1, by0, by1 = mode.buttonCoords[i]
-            canvas.create_rectangle(bx0, by0, bx1, by1, fill='black', outline='white', width=3)
-            textX, textY = (bx0 + bx1) / 2, (by0 + by1) / 2
-            if mode.buttonText[i] == 'Play' and mode.playing:
-                mode.buttonText[i] = 'Stop'
-            elif mode.buttonText[i] == 'Stop' and not mode.playing:
-                mode.buttonText[i] = 'Play'
-            canvas.create_text(textX, textY, text=mode.buttonText[i], font='System 18 bold', fill='white')
-        
-    def checkPressedCreateButtons(mode, x, y):
-        mode.buttonText = ['New', 'Open', 'Save', 'Play', '←', '→']
-        for i in range(len(mode.buttonCoords)):
-            bx0, bx1, by0, by1 = mode.buttonCoords[i]
-            if bx0 < x < bx1 and by0 < y < by1:
-                if i == 0:
-                    mode.appStarted()
-                elif i == 1:
-                    mode.getFiles()
-                    mode.displayFiles = True
-                    mode.getGrid()
-                elif i == 2:
-                    mode.saving = True
-                    mode.createMidi()
-                    mode.createTxt()
-                elif i == 3:
-                    mode.playGrid()
-                elif i == 4 and mode.currentPage > 0:
-                    mode.currentPage -= 1
-                elif i == 5:
-                    mode.currentPage += 1
-                    if mode.currentPage >= mode.pages and not mode.playing:
-                        mode.newPage()
-                    elif mode.currentPage >= mode.pages:
-                        mode.currentPage -= 1
-
-    # initialize the different note sounds
-    def initNoteSounds(mode):
-        pygame.init()
-        mode.soundsDict = dict()
-        # audio files from:
-        # https://www.reddit.com/r/piano/comments/3u6ke7/heres_some_midi_and_mp3_files_for_individual/
-        mode.soundsDict['C'] = pygame.mixer.Sound("mp3 notes/c4.mp3")
-        mode.soundsDict['C#'] = pygame.mixer.Sound("mp3 notes/c-4.mp3")
-        mode.soundsDict['D'] = pygame.mixer.Sound("mp3 notes/d4.mp3")
-        mode.soundsDict['D#'] = pygame.mixer.Sound("mp3 notes/d-4.mp3")
-        mode.soundsDict['E'] = pygame.mixer.Sound("mp3 notes/e4.mp3")
-        mode.soundsDict['F'] = pygame.mixer.Sound("mp3 notes/f4.mp3")
-        mode.soundsDict['F#'] = pygame.mixer.Sound("mp3 notes/f-4.mp3")
-        mode.soundsDict['G'] = pygame.mixer.Sound("mp3 notes/g4.mp3")
-        mode.soundsDict['G#'] = pygame.mixer.Sound("mp3 notes/g-4.mp3")
-        mode.soundsDict['A'] = pygame.mixer.Sound("mp3 notes/a5.mp3")
-        mode.soundsDict['A#'] = pygame.mixer.Sound("mp3 notes/a-5.mp3")
-        mode.soundsDict['B'] = pygame.mixer.Sound("mp3 notes/b5.mp3")
-
-    # add a new page to the grid
-    def newPage(mode):
-        mode.pages += 1
-        for col in range(mode.cols):
-            newList = ['0' for i in range(mode.pageLength)]
-            mode.grid[col].extend(newList)
-    
-    # remove empty grid cells at the end of the grid
-    def removeWhiteSpace(mode):
-        gridLength = len(mode.grid[0])
-        i = gridLength - 1
-        containsNotes = False
-        while not containsNotes and i >= 0:
-            for col in mode.grid:
-                colList = mode.grid[col]
-                if colList[i] != '0':
-                    containsNotes = True
-                    return
-            if not containsNotes:
-                for col in mode.grid:
-                    colList = mode.grid[col]
-                    colList.pop()
-                i -= 1
-    
     # creates the note "Palette" at the top of the screen
     def initPalette(mode):
         mode.colors = ['maroon',
@@ -203,49 +119,50 @@ class CreateMode(Mode):
             mode.colorCoords[letter] = (x0, y0, x1, y1, color)
         mode.currentNote = 'C'
 
-    # button dimensions
-    def initButtonDimensions(mode):
-        mode.buttonWidth = mode.buttonHeight = 40
-        mode.bx0 = 10
-        mode.bx1 = mode.bx0 + mode.buttonWidth
-        mode.by0 = 10
-        mode.by1 = mode.by0 + mode.buttonHeight
-        # https://www.flaticon.com/
-        mode.homeButton = mode.loadImage("pictures/home.png")
-
-    # plays the current song on the grid
-    def playGrid(mode):
-        if not mode.getMusicStream():
-            return
-        mode.playing = True
-        mode.currentIndex = 0
-        mode.startTime = time.time()
-
-    def getMusicStream(mode):
-        mode.stream = []
-        containsNotes = False
-        for i in range(len(mode.grid[0])):
-            notes = set()
-            for col in mode.grid:
-                colList = mode.grid[col]
-                elem = colList[i]
-                if elem in mode.gamepieces:
-                    continue
-                notes.add(elem)
-            notesList = list(notes)
-            if '0' in notesList:
-                notesList.remove('0')
-            if notesList == []:
-                mode.stream.append([])
-            else:
-                mode.stream.append(notesList)
-                containsNotes = True
-        mode.playedOrNot = [False for i in range(len(mode.stream))]
-        return containsNotes
+    # initialize the music grid
+    def initGrid(mode):
+        mode.pages = 1
+        mode.grid = dict()
+        for col in range(mode.cols):
+            mode.grid[col] = ['0' for i in range(mode.pageLength)]
+        mode.currentPage = 0
+    
+    # initialize the different note sounds
+    def initNoteSounds(mode):
+        pygame.init()
+        mode.soundsDict = dict()
+        # audio files from:
+        # https://www.reddit.com/r/piano/comments/3u6ke7/heres_some_midi_and_mp3_files_for_individual/
+        mode.soundsDict['C'] = pygame.mixer.Sound("mp3 notes/c4.mp3")
+        mode.soundsDict['C#'] = pygame.mixer.Sound("mp3 notes/c-4.mp3")
+        mode.soundsDict['D'] = pygame.mixer.Sound("mp3 notes/d4.mp3")
+        mode.soundsDict['D#'] = pygame.mixer.Sound("mp3 notes/d-4.mp3")
+        mode.soundsDict['E'] = pygame.mixer.Sound("mp3 notes/e4.mp3")
+        mode.soundsDict['F'] = pygame.mixer.Sound("mp3 notes/f4.mp3")
+        mode.soundsDict['F#'] = pygame.mixer.Sound("mp3 notes/f-4.mp3")
+        mode.soundsDict['G'] = pygame.mixer.Sound("mp3 notes/g4.mp3")
+        mode.soundsDict['G#'] = pygame.mixer.Sound("mp3 notes/g-4.mp3")
+        mode.soundsDict['A'] = pygame.mixer.Sound("mp3 notes/a5.mp3")
+        mode.soundsDict['A#'] = pygame.mixer.Sound("mp3 notes/a-5.mp3")
+        mode.soundsDict['B'] = pygame.mixer.Sound("mp3 notes/b5.mp3")
+    
+    # add a new page to the grid
+    def newPage(mode):
+        mode.pages += 1
+        for col in range(mode.cols):
+            newList = ['0' for i in range(mode.pageLength)]
+            mode.grid[col].extend(newList)
+    
+    ###############################################
+    # Checking for events
+    ###############################################
 
     def timerFired(mode):
         if mode.playing:
-            dt = time.time() - mode.startTime
+            try:
+                dt = time.time() - mode.startTime
+            except:
+                return
             mode.currentIndex = int(dt * 1000 / mode.timeInterval)
             if mode.currentIndex >= mode.pages * mode.pageLength:
                 mode.playing = False
@@ -288,6 +205,37 @@ class CreateMode(Mode):
         mode.checkPressedGrid(x, y)
         mode.checkPressedCreateButtons(x, y)
 
+    # check if create buttons are pressed
+    def checkPressedCreateButtons(mode, x, y):
+        mode.buttonText = ['New', 'Open', 'Save', 'Play', '←', '→']
+        for i in range(len(mode.buttonCoords)):
+            bx0, bx1, by0, by1 = mode.buttonCoords[i]
+            if bx0 < x < bx1 and by0 < y < by1:
+                if i == 0:
+                    mode.appStarted()
+                elif i == 1:
+                    mode.getFiles()
+                    mode.displayFiles = True
+                    mode.getGrid()
+                elif i == 2:
+                    mode.saving = True
+                    mode.createMidi()
+                    mode.createTxt()
+                elif i == 3:
+                    if mode.playing:
+                        mode.playing = False
+                    else:
+                        mode.playing = True
+                        mode.playGrid()
+                elif i == 4 and mode.currentPage > 0:
+                    mode.currentPage -= 1
+                elif i == 5:
+                    mode.currentPage += 1
+                    if mode.currentPage >= mode.pages and not mode.playing:
+                        mode.newPage()
+                    elif mode.currentPage >= mode.pages:
+                        mode.currentPage -= 1
+
     # check if home button is pressed
     def checkPressedButtons(mode, x, y):
         if mode.bx0 < x < mode.bx1 and mode.by0 < y < mode.by1:
@@ -322,6 +270,61 @@ class CreateMode(Mode):
         colList = mode.grid[col]
         colList[row] = newNote
 
+    ###############################################
+    # Play grid
+    ###############################################
+
+     # plays the current song on the grid
+    def playGrid(mode):
+        if not mode.getMusicStream():
+            return
+        mode.playing = True
+        mode.currentIndex = 0
+        mode.startTime = time.time()
+
+    def getMusicStream(mode):
+        mode.stream = []
+        containsNotes = False
+        for i in range(len(mode.grid[0])):
+            notes = set()
+            for col in mode.grid:
+                colList = mode.grid[col]
+                elem = colList[i]
+                if elem in mode.gamepieces:
+                    continue
+                notes.add(elem)
+            notesList = list(notes)
+            if '0' in notesList:
+                notesList.remove('0')
+            if notesList == []:
+                mode.stream.append([])
+            else:
+                mode.stream.append(notesList)
+                containsNotes = True
+        mode.playedOrNot = [False for i in range(len(mode.stream))]
+        return containsNotes
+
+    ###############################################
+    # Creating/retreiving text and midi files
+    ###############################################
+
+    # remove empty grid cells at the end of the grid
+    def removeWhiteSpace(mode):
+        gridLength = len(mode.grid[0])
+        i = gridLength - 1
+        containsNotes = False
+        while not containsNotes and i >= 0:
+            for col in mode.grid:
+                colList = mode.grid[col]
+                if colList[i] != '0':
+                    containsNotes = True
+                    return
+            if not containsNotes:
+                for col in mode.grid:
+                    colList = mode.grid[col]
+                    colList.pop()
+                i -= 1
+            
     # create and save a midi file from the current grid
     def createMidi(mode):
         mode.removeWhiteSpace()
@@ -386,27 +389,54 @@ class CreateMode(Mode):
         with open(os.path.join(path, file), 'w') as fp:
             fp.write(text)
 
+    # retrieve grid from text file
+    def getGrid(mode):
+        index = None
+        while index == None or index not in range(len(mode.filesInFolder)):
+            inputString = mode.getUserInput('Enter grid number.')
+            if inputString == None:
+                mode.displayFiles = False
+                return
+            try:
+                index = int(inputString)
+            except:
+                continue
+        textFileName = 'gameboards/' + mode.filesInFolder[index]
+        textFile = open(textFileName, 'r')
+        textGrid = textFile.read()
+        gridList = textGrid.splitlines()
+        mode.grid = dict()
+        for i in range(len(gridList)):
+            mode.grid[i] = gridList[i].split(' ')
+            mode.grid[i].pop()
+        mode.pages = len(mode.grid[0]) // mode.pageLength + 1
+        mode.currentPage = 0
+        missingRows = mode.pageLength - len(mode.grid[0]) % mode.pageLength
+        newRows = ['0' for i in range(missingRows)]
+        for col in mode.grid:
+            mode.grid[col].extend(newRows)
+        mode.displayFiles = False
+
+    ###############################################
+    # Drawing
+    ###############################################
+
+    # draw create mode buttons
+    def drawCreateButtons(mode, canvas):
+        for i in range(len(mode.buttonCoords)):
+            bx0, bx1, by0, by1 = mode.buttonCoords[i]
+            canvas.create_rectangle(bx0, by0, bx1, by1, fill='black', outline='white', width=3)
+            textX, textY = (bx0 + bx1) / 2, (by0 + by1) / 2
+            if mode.buttonText[i] == 'Play' and mode.playing:
+                mode.buttonText[i] = 'Stop'
+            elif mode.buttonText[i] == 'Stop' and not mode.playing:
+                mode.buttonText[i] = 'Play'
+            canvas.create_text(textX, textY, text=mode.buttonText[i], font='System 18 bold', fill='white')
+        
     # draw home buttpn
     def drawButtons(mode, canvas):
         textX, textY = (mode.bx0 + mode.bx1) / 2, (mode.by0 + mode.by1) / 2
         canvas.create_image(textX, textY, image=ImageTk.PhotoImage(mode.homeButton))
-
-    # get the background image
-    def initBackground(mode):
-        # image from https://www.mobilebeat.com/wp-content/uploads/2016/07/Background-Music-768x576-1280x720.jpg
-        mode.background = mode.scaleImage(mode.loadImage("pictures/homebackground.png"), 1/2)
-    
-    # create mode dimensions
-    def initDimensions(mode):
-        mode.cols = 5
-        mode.pageLength = 24
-        mode.colorWidth = mode.colorHeight = (mode.width - 25) / mode.pageLength
-        mode.eraserLength = mode.colorWidth * 0.9
-        mode.gridTopOffset = mode.height / 2 - mode.colorHeight * mode.cols / 2
-        mode.gridSideOffset = mode.width / 2 - mode.colorWidth * mode.pageLength / 2
-        mode.numberOfLetters = 16
-        mode.PaletteSideOffset = mode.width / 2 - mode.colorWidth * mode.numberOfLetters / 2
-        mode.PaletteTopOffset = 20
 
     # draw background image
     def drawBackground(mode, canvas):
@@ -490,15 +520,8 @@ class CreateMode(Mode):
         canvas.create_text(mode.width / 2, mode.height / 2 + 15, text=f'Press "New" to create new song.', fill='white', font='System 18 bold')
 
     def drawHelp(mode, canvas):
-        # msg = '"n" for new grid, "o" to open a saved grid, "d" to save grid and song'
-        # msg2 = '"p" to play open grid, "s" to stop playing'
-        # msg1 = 'use arrow keys to navigate through pages'
-        # style = 'System 18 bold italic'
         msg3 = '"T" = token, "O" = obstacle, "@" = attack'
         canvas.create_text(mode.width / 2, mode.height - 140, text=msg3, font='System 18 bold italic', fill='white')
-        # canvas.create_text(mode.width / 2, mode.height - 80, text=msg, font=style, fill='white')
-        # canvas.create_text(mode.width / 2, mode.height - 60, text=msg2, font=style, fill='white')
-        # canvas.create_text(mode.width / 2, mode.height - 40, text=msg1, font=style, fill='white')
 
     def getFiles(mode):
         mode.filesInFolder = os.listdir('gameboards')
