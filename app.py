@@ -5,6 +5,7 @@ from HomeMode import HomeMode
 from PlayMode import PlayMode
 from ScoreMode import ScoreMode
 from CreateMode import CreateMode
+from HelpMode import HelpMode
 
 class MyModalApp(ModalApp):
     def appStarted(app):
@@ -12,6 +13,7 @@ class MyModalApp(ModalApp):
         app.PlayMode = PlayMode()
         app.CreateMode = CreateMode()
         app.ScoreMode = ScoreMode()
+        app.HelpMode = HelpMode()
         app.setActiveMode(app.HomeMode)
 
 app = MyModalApp(width=1000, height=600)

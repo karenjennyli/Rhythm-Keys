@@ -342,11 +342,9 @@ class PlayMode(Mode):
                 y1 = target.y1 + gameboard.scrollY
                 if y1 > gameboard.height or y0 < 0:
                     continue
-                if y1 > gameboard.lineY and not target.pressed and target.color != 'red':
-                    target.color = 'red'
-                    gameboard.missedTargets += 1 # FIX THIS IT'S NOT WORKING
-                elif target.pressed:
-                    target.color = 'green'
+                if y1 > gameboard.lineY and not target.pressed and not target.missed:
+                    target.missed = True
+                    gameboard.missedTargets += 1
                 if not target.pressed:
                     canvas.create_rectangle(x0, y0, x1, y1, outline=target.color, width=4, fill='black')
 
@@ -363,13 +361,12 @@ class PlayMode(Mode):
                 r = abs(y0 - y1) / 2
                 if y1 > gameboard.height or y0 < 0:
                     continue
-                if token.pressed:
-                    color = 'green'
-                else:
-                    color = 'gold'
+                color = 'gold'
                 if not token.pressed:
-                    # canvas.create_rectangle(x0, y0, x1, y1, outline=color, width=4, fill='black')
                     canvas.create_oval(cx - r, cy - r, cx + r, cy + r, outline=color, width=4, fill='black')
+                    r *= .6
+                    canvas.create_oval(cx - r, cy - r, cx + r, cy + r, outline=color, width=4, fill='black')
+
 
     # draw all obstacles
     def drawObstacles(mode, canvas, gameboard):
@@ -380,14 +377,12 @@ class PlayMode(Mode):
                 x1 = x0 + gameboard.colWidth - 2 * gameboard.pieceSideMargin
                 y0 = obstacle.y0 + gameboard.scrollY
                 y1 = obstacle.y1 + gameboard.scrollY
+                cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
                 if y1 > gameboard.height or y0 < 0:
                     continue
-                if obstacle.pressed:
-                    color = 'red'
-                else:
-                    color = 'black'
                 if not obstacle.pressed:
-                    canvas.create_rectangle(x0, y0, x1, y1, outline='red', width=4, fill='black')
+                    canvas.create_rectangle(x0, y0, x1, y1, outline='white', width=4, fill='black')
+                    canvas.create_image(cx, cy, image=ImageTk.PhotoImage(mode.skull))
 
     # draw all attacks
     def drawAttacks(mode, canvas, gameboard):
@@ -406,8 +401,8 @@ class PlayMode(Mode):
                 else:
                     color = 'red'
                 if not attack.pressed:
+                    canvas.create_image(cx, cy, image=ImageTk.PhotoImage(mode.sword))
                     # canvas.create_rectangle(x0, y0, x1, y1, outline=color, width=4, fill='black')
-                    canvas.create_image(cx, cy, image=ImageTk.PhotoImage(mode.skull))
     
     # draw the message that the gameboard's keys are disabled
     def drawAttackMessages(mode, canvas, gameboard):
@@ -421,9 +416,9 @@ class PlayMode(Mode):
             textY = (gameboard.lineY + gameboard.height) / 2
             timeLeft = int(mode.disabledTime - (time.time() - gameboard.disabledStartTime)) + 1
             if timeLeft == 1:
-                canvas.create_text(textX, textY, text=f'Keys disabled for {timeLeft} more second!', fill='white', font='System 11 bold')
+                canvas.create_text(textX, textY, text=f'Keys disabled for {timeLeft} more second!', fill='white', font='System 14 bold')
             else:
-                canvas.create_text(textX, textY, text=f'Keys disabled for {timeLeft} more seconds!', fill='white', font='System 11 bold')
+                canvas.create_text(textX, textY, text=f'Keys disabled for {timeLeft} more seconds!', fill='white', font='System 14 bold')
 
     # the strike line at the bottom of the screen
     def drawStrikeLine(mode, canvas, gameboard):
@@ -528,8 +523,9 @@ class PlayMode(Mode):
     def initBackground(mode):
         # image from https://www.mobilebeat.com/wp-content/uploads/2016/07/Background-Music-768x576-1280x720.jpg
         mode.background = mode.scaleImage(mode.loadImage("pictures/homebackground.png"), 1/2)
-        # image from https://www.flaticon.com/
+        # images from https://www.flaticon.com/
         mode.skull = mode.loadImage("pictures/skull.png")
+        mode.sword = mode.loadImage("pictures/sword.png")
     
     # draw background
     def drawBackground(mode, canvas):
