@@ -15,6 +15,7 @@ class PlayMode(Mode):
     def appStarted(mode):
         mode.initBackground()
         mode.getSongOptions()
+        mode.partsSet = False
         mode.presetGameboard = False
         mode.activated = True
         mode.readyToPlay = False
@@ -23,6 +24,7 @@ class PlayMode(Mode):
         mode.gameOver = False
         mode.timerDelay = 1
         mode.displayEndScores = False
+        mode.difficulty = None
         mode.initKeysHeld()
         mode.initButtonDimensions()
         mode.getNumberOfPlayers()
@@ -82,7 +84,6 @@ class PlayMode(Mode):
 
     # get difficulty based on user input
     def initDifficulty(mode):
-        mode.difficulty = None
         levels = {1, 2, 3, 4, 5}
         while not (isinstance(mode.difficulty, int) and mode.difficulty in levels):
             difficultyString = mode.getUserInput("Enter difficulty level from 1-5.")
@@ -167,6 +168,7 @@ class PlayMode(Mode):
         mode.grid = dict()
         for i in range(len(gridList)):
             mode.grid[i] = gridList[i].split(' ')
+            mode.grid[i].pop()
 
     # extract necessary info from midi file using music21
     # referenced music21 user's guide and documentation to use music21 module
@@ -330,6 +332,10 @@ class PlayMode(Mode):
             x = gameboard.offset + gameboard.width
             y0, y1 = 0, mode.height
             canvas.create_line(x, y0, x, y1, fill='white', width=4)
+        decimal = -mode.gameboards[0].scrollY / (mode.gameboards[0].minY - mode.gameboards[0].height)
+        x = decimal * mode.width
+        y = mode.height
+        canvas.create_line(0, y, x, y, fill='white', width=30)
 
     # draw all targets
     def drawTargets(mode, canvas, gameboard):
@@ -478,26 +484,27 @@ class PlayMode(Mode):
 
     # draw the song options the player can choose from
     def drawSongOptions(mode, canvas):
-        startY = 100
+        startY = 50
         canvas.create_text(mode.width / 2, startY, text='Song Options', fill='white', font='System 36 bold')
         startY += 50
-        intervalY = 30
+        intervalY = 20
         numberX = 100
-        songX = numberX + 100
+        songX = numberX + 50
         for i in range(len(mode.filesInFolder)):
             fileName = mode.filesInFolder[i]
             song = fileName.split('.')[0]
             textFileName = song + '.txt'
             if textFileName in os.listdir('gameboards'):
-                style = 'System 18 bold italic'
+                style = 'System 14 bold italic'
                 song = '* ' + song
             else:
-                style = 'System 18 bold'
-            canvas.create_text(numberX, startY + intervalY * i, text=str(i), anchor='w', fill='white', font='System 18 bold')
+                style = 'System 14 bold'
+            canvas.create_text(numberX, startY + intervalY * i, text=str(i), anchor='w', fill='white', font='System 14 bold')
             canvas.create_text(songX, startY + intervalY * i, text=song, anchor='w', fill='white', font=style)
         textX = mode.width / 2
         textY = mode.height - 10
         canvas.create_text(textX, textY, text='Italicized titles with * have a preset gameboard.', anchor='s', font='System 18 bold italic', fill='white')
+
 
     # get all the names of the files in the music folder
     def getSongOptions(mode):
@@ -505,20 +512,20 @@ class PlayMode(Mode):
     
     # draw the part options for a song the user can choose from
     def drawParts(mode, canvas):
-        startY = 100
+        startY = 50
         canvas.create_text(mode.width / 2, startY, text='Part Options', fill='white', font='System 36 bold')
         startY += 50
-        intervalY = 30
+        intervalY = 20
         numberX = 100
-        partX = numberX + 100
+        partX = numberX + 50
         for i in range(len(mode.parts)):
             part = mode.parts[i]
             if part.partName == None:
                 label = f'Part {i}'
             else:
                 label = part.partName
-            canvas.create_text(numberX, startY + intervalY * i, text=str(i), anchor='w', fill='white', font='System 18 bold')
-            canvas.create_text(partX, startY + intervalY * i, text=label, anchor='w', fill='white', font='System 18 bold')
+            canvas.create_text(numberX, startY + intervalY * i, text=str(i), anchor='w', fill='white', font='System 14 bold')
+            canvas.create_text(partX, startY + intervalY * i, text=label, anchor='w', fill='white', font='System 14 bold')
 
     # draw home button
     def drawButtons(mode, canvas):
@@ -537,6 +544,15 @@ class PlayMode(Mode):
     def drawBackground(mode, canvas):
         canvas.create_image(mode.width / 2, mode.height / 2, image=ImageTk.PhotoImage(mode.background))
 
+    def drawPressP(mode, canvas):
+        x0 = 100
+        x1 = mode.width - 100
+        y0 = mode.height / 2 - 50
+        y1 = mode.height / 2 + 50
+        canvas.create_rectangle(x0, y0, x1, y1, fill='black', outline='white', width=4)
+        textX, textY = (x0 + x1) / 2, (y0 + y1) / 2
+        canvas.create_text(textX, textY, text='Press "p" to play!', fill='white', font='System 18 bold')
+
     def redrawAll(mode, canvas):
         canvas.create_rectangle(0, 0, mode.width, mode.height, fill='black')
         if mode.readyToPlay:
@@ -549,4 +565,6 @@ class PlayMode(Mode):
             mode.drawParts(canvas)
         if mode.displayEndScores:
             mode.drawEndScores(canvas)
+        if not mode.playing and not mode.gameOver and mode.partsSet and mode.difficulty != None:
+            mode.drawPressP(canvas)
         mode.drawButtons(canvas)

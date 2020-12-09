@@ -70,7 +70,7 @@ class PresetGameboard(Gameboard):
                 if msg != 'T':
                     continue
                 elemDuration = 1 / 8
-                y0 = self.lineY - i * self.beatLength * elemDuration / 2
+                y0 = self.lineY - i / 2 * self.beatLength
                 y1 = y0 - elemDuration * self.tokenLength - self.pieceTopMargin
                 x = col * self.colWidth
                 newToken = Token(col, False, x, y0, y1)
@@ -88,7 +88,7 @@ class PresetGameboard(Gameboard):
                 if msg != 'O':
                     continue
                 elemDuration = 1 / 8
-                y0 = self.lineY - i * self.beatLength * elemDuration / 2
+                y0 = self.lineY - i / 2 * self.beatLength
                 y1 = y0 - elemDuration * self.tokenLength - self.pieceTopMargin
                 x = col * self.colWidth
                 newObstacle = Obstacle(col, False, x, y0, y1)

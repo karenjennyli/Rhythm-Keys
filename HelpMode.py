@@ -61,7 +61,8 @@ If you mess up, create a new grid. You can also open an existing grid, or save t
 Play your grid to see if you want to make changes!
 
 Note: You can add more midi files to the music folder if you'd like!
-The limitation is that the whole song must be one tempo though, so it works best with more simple songs!
+The limitation is that the song must be one tempo though, but try to play it and see if it works!
+https://bitmidi.com/random will give you a random midi file :)
 
 
 Credit: home, skull, and sword icons made by Freepik from www.flaticon.com

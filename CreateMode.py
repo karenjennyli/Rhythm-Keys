@@ -14,6 +14,7 @@ class CreateMode(Mode):
         mode.bpm = 120
         mode.timeInterval = 60 * 1000 / mode.bpm / 2
         mode.playing = False
+        mode.displayFiles = False
         mode.initDimensions()
         mode.initBackground()
         mode.initButtonDimensions()
@@ -33,6 +34,33 @@ class CreateMode(Mode):
             mode.grid[col] = ['0' for i in range(mode.pageLength)]
         mode.currentPage = 0
     
+    def getGrid(mode):
+        index = None
+        while index == None or index not in range(len(mode.filesInFolder)):
+            inputString = mode.getUserInput('Enter grid number.')
+            if inputString == None:
+                mode.displayFiles = False
+                return
+            try:
+                index = int(inputString)
+            except:
+                continue
+        textFileName = 'gameboards/' + mode.filesInFolder[index]
+        textFile = open(textFileName, 'r')
+        textGrid = textFile.read()
+        gridList = textGrid.splitlines()
+        mode.grid = dict()
+        for i in range(len(gridList)):
+            mode.grid[i] = gridList[i].split(' ')
+            mode.grid[i].pop()
+        mode.pages = len(mode.grid[0]) // mode.pageLength + 1
+        mode.currentPage = 0
+        missingRows = mode.pageLength - len(mode.grid[0]) % mode.pageLength
+        newRows = ['0' for i in range(missingRows)]
+        for col in mode.grid:
+            mode.grid[col].extend(newRows)
+        mode.displayFiles = False
+
     # buttons to change current page
     def initCreateButtons(mode):
         # buttons: new, open, save, play/stop, left, right
@@ -72,10 +100,30 @@ class CreateMode(Mode):
             canvas.create_text(textX, textY, text=mode.buttonText[i], font='System 18 bold', fill='white')
         
     def checkPressedCreateButtons(mode, x, y):
+        mode.buttonText = ['New', 'Open', 'Save', 'Play', '←', '→']
         for i in range(len(mode.buttonCoords)):
             bx0, bx1, by0, by1 = mode.buttonCoords[i]
             if bx0 < x < bx1 and by0 < y < by1:
-                mode.app.setActiveMode(mode.buttonModes[i])
+                if i == 0:
+                    mode.appStarted()
+                elif i == 1:
+                    mode.getFiles()
+                    mode.displayFiles = True
+                    mode.getGrid()
+                elif i == 2:
+                    mode.saving = True
+                    mode.createMidi()
+                    mode.createTxt()
+                elif i == 3:
+                    mode.playGrid()
+                elif i == 4 and mode.currentPage > 0:
+                    mode.currentPage -= 1
+                elif i == 5:
+                    mode.currentPage += 1
+                    if mode.currentPage >= mode.pages and not mode.playing:
+                        mode.newPage()
+                    elif mode.currentPage >= mode.pages:
+                        mode.currentPage -= 1
 
     # initialize the different note sounds
     def initNoteSounds(mode):
@@ -206,6 +254,7 @@ class CreateMode(Mode):
                     pygame.mixer.Sound.play(sound)
 
     def keyPressed(mode, event):
+        return
         if event.key == 'Left' and mode.currentPage > 0:
             mode.currentPage -= 1
         elif event.key == 'Right':
@@ -224,13 +273,17 @@ class CreateMode(Mode):
             mode.playGrid()
         elif event.key == 's':
             mode.playing = False
+        elif event.key == 'o':
+            mode.getFiles()
+            mode.displayFiles = True
+            mode.getGrid()
 
     def mousePressed(mode, event):
         x, y = event.x, event.y
         mode.checkPressedButtons(x, y)
         mode.checkPressedPalette(x, y)
         mode.checkPressedGrid(x, y)
-        # mode.checkPressedCreateButtons(x, y)
+        mode.checkPressedCreateButtons(x, y)
 
     # check if home button is pressed
     def checkPressedButtons(mode, x, y):
@@ -419,7 +472,7 @@ class CreateMode(Mode):
         y1 = y0 + boxHeight
         canvas.create_rectangle(x0, y0, x1, y1, fill='black', outline='white', width=4)
         canvas.create_text(mode.width / 2, mode.height / 2 - 15, text=f'No notes to create a song.', fill='white', font='System 18 bold')
-        canvas.create_text(mode.width / 2, mode.height / 2 + 15, text=f'Press "n" to create new song.', fill='white', font='System 18 bold')
+        canvas.create_text(mode.width / 2, mode.height / 2 + 15, text=f'Press "New" to create new song.', fill='white', font='System 18 bold')
 
     # draw message that midi and text files were saved
     def drawFinishedMessage(mode, canvas):
@@ -431,18 +484,39 @@ class CreateMode(Mode):
         y1 = y0 + boxHeight
         canvas.create_rectangle(x0, y0, x1, y1, fill='black', outline='white', width=4)
         canvas.create_text(mode.width / 2, mode.height / 2 - 15, text=f'{mode.songName} added to music library!', fill='white', font='System 18 bold')
-        canvas.create_text(mode.width / 2, mode.height / 2 + 15, text=f'Press "n" to create new song.', fill='white', font='System 18 bold')
+        canvas.create_text(mode.width / 2, mode.height / 2 + 15, text=f'Press "New" to create new song.', fill='white', font='System 18 bold')
 
     def drawHelp(mode, canvas):
-        msg = '"n" for new grid, "o" to open a saved grid, "d" to save grid and song'
-        msg2 = '"p" to play open grid, "s" to stop playing'
-        msg1 = 'use arrow keys to navigate through pages'
-        style = 'System 18 bold italic'
+        # msg = '"n" for new grid, "o" to open a saved grid, "d" to save grid and song'
+        # msg2 = '"p" to play open grid, "s" to stop playing'
+        # msg1 = 'use arrow keys to navigate through pages'
+        # style = 'System 18 bold italic'
         msg3 = '"T" = token, "O" = obstacle, "@" = attack'
-        canvas.create_text(mode.width / 2, mode.height - 140, text=msg3, font='System 18 bold', fill='white')
-        canvas.create_text(mode.width / 2, mode.height - 80, text=msg, font=style, fill='white')
-        canvas.create_text(mode.width / 2, mode.height - 60, text=msg2, font=style, fill='white')
-        canvas.create_text(mode.width / 2, mode.height - 40, text=msg1, font=style, fill='white')
+        canvas.create_text(mode.width / 2, mode.height - 140, text=msg3, font='System 18 bold italic', fill='white')
+        # canvas.create_text(mode.width / 2, mode.height - 80, text=msg, font=style, fill='white')
+        # canvas.create_text(mode.width / 2, mode.height - 60, text=msg2, font=style, fill='white')
+        # canvas.create_text(mode.width / 2, mode.height - 40, text=msg1, font=style, fill='white')
+
+    def getFiles(mode):
+        mode.filesInFolder = os.listdir('gameboards')
+
+    def drawFiles(mode, canvas):
+        x0 = mode.width / 2
+        x1 = mode.width
+        y0 = 0
+        y1 = mode.height
+        canvas.create_rectangle(x0, y0, x1, y1, fill='black', outline='white', width=4)
+        startY = 50
+        canvas.create_text(mode.width * 3 / 4, startY, text='Grid Options', fill='white', font='System 24 bold')
+        startY += 50
+        intervalY = 20
+        numberX = mode.width / 2 + 50
+        nameX = numberX + 50
+        for i in range(len(mode.filesInFolder)):
+            fileName = mode.filesInFolder[i]
+            name = fileName.split('.')[0]
+            canvas.create_text(numberX, startY + intervalY * i, text=str(i), anchor='w', fill='white', font='System 14 bold')
+            canvas.create_text(nameX, startY + intervalY * i, text=name, anchor='w', fill='white', font='System 14 bold')
 
     def redrawAll(mode, canvas):
         canvas.create_rectangle(0, 0, mode.width, mode.height, fill='black')
@@ -458,3 +532,5 @@ class CreateMode(Mode):
             mode.drawNoNotesMessage(canvas)
         if mode.finished:
             mode.drawFinishedMessage(canvas)
+        if mode.displayFiles:
+            mode.drawFiles(canvas)

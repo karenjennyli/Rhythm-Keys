@@ -22,3 +22,5 @@ https://www.pygame.org/wiki/GettingStarted
 Shortcut commands:
 There are no shortcut commands, but if you want to test a very short song,
 you can use the "Test Song" in the song options.
+You can also go to this website to get a random midi file:
+https://bitmidi.com/random 
