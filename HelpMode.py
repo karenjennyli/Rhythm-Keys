@@ -44,7 +44,32 @@ class HelpMode(Mode):
     def drawBackground(mode, canvas):
         canvas.create_image(mode.width / 2, mode.height / 2, image=ImageTk.PhotoImage(mode.background))
 
+    def drawInstructions(mode, canvas):
+        msg = """Play Mode:
+Choose the number of players you want, then which song you want to play from those listed.
+If you are using a preset gameboard, you cannot choose which parts you want to play.
+Otherwise, enter the part numbers that you want to play.
+In the game, collect tokens (yellow circles), avoid skulls (obstacles), and hit the colorful targets.
+In multiplayer, attack your opponents with the sword gamepieces on the board:
+they'll disable your opponent's keys.
+
+Create Mode:
+Create a song and a gameboard at the same time!
+Select the note or gamepiece type in the top palette and click the grid cells to add them.
+Erase using the empty black square in the top palette.
+If you mess up, create a new grid. You can also open an existing grid, or save the current grid.
+Play your grid to see if you want to make changes!
+
+Note: You can add more midi files to the music folder if you'd like!
+The limitation is that the whole song must be one tempo though, so it works best with more simple songs!
+
+
+Credit: home, skull, and sword icons made by Freepik from www.flaticon.com
+"""
+        canvas.create_text(60, 60, text=msg, fill='white', font='System 18 bold', anchor='nw')
+
     def redrawAll(mode, canvas):
         canvas.create_rectangle(0, 0, mode.width, mode.height, fill='black')
         mode.drawBackground(canvas)
         mode.drawButtons(canvas)
+        mode.drawInstructions(canvas)

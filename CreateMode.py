@@ -435,10 +435,14 @@ class CreateMode(Mode):
 
     def drawHelp(mode, canvas):
         msg = '"n" for new grid, "o" to open a saved grid, "d" to save grid and song'
-        msg1 = 'arrow keys to navigate through pages'
+        msg2 = '"p" to play open grid, "s" to stop playing'
+        msg1 = 'use arrow keys to navigate through pages'
         style = 'System 18 bold italic'
-        canvas.create_text(mode.width / 2, mode.height - 40, text=msg, font=style)
-        canvas.create_text(mode.width / 2, mode.height - 20, text=msg1, font=style)
+        msg3 = '"T" = token, "O" = obstacle, "@" = attack'
+        canvas.create_text(mode.width / 2, mode.height - 140, text=msg3, font='System 18 bold', fill='white')
+        canvas.create_text(mode.width / 2, mode.height - 80, text=msg, font=style, fill='white')
+        canvas.create_text(mode.width / 2, mode.height - 60, text=msg2, font=style, fill='white')
+        canvas.create_text(mode.width / 2, mode.height - 40, text=msg1, font=style, fill='white')
 
     def redrawAll(mode, canvas):
         canvas.create_rectangle(0, 0, mode.width, mode.height, fill='black')
@@ -446,6 +450,7 @@ class CreateMode(Mode):
         mode.drawButtons(canvas)
         mode.drawPalette(canvas)
         mode.drawCreateButtons(canvas)
+        mode.drawHelp(canvas)
         if not mode.saving:
             mode.drawGrid(canvas)
             mode.drawCurrentPage(canvas)
