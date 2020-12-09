@@ -1,4 +1,4 @@
-# PlayMode class: the moe that allows the player to choose their song 
+# PlayMode class: the mode that allows the player to choose their song 
 # and play the song
 
 from cmu_112_graphics import *
@@ -52,6 +52,18 @@ class PlayMode(Mode):
     def modeActivated(mode):
         mode.appStarted()
 
+    ###############################################
+    # Initializing
+    ###############################################
+
+    # get background image
+    def initBackground(mode):
+        # image from https://www.mobilebeat.com/wp-content/uploads/2016/07/Background-Music-768x576-1280x720.jpg
+        mode.background = mode.scaleImage(mode.loadImage("pictures/homebackground.png"), 1/2)
+        # images from https://www.flaticon.com/
+        mode.skull = mode.loadImage("pictures/skull.png")
+        mode.sword = mode.loadImage("pictures/sword.png")
+    
     # get user input of number of players
     def getNumberOfPlayers(mode):
         mode.players = None
@@ -223,6 +235,14 @@ class PlayMode(Mode):
             mode.partsNotes.append(mode.parts[index].flat)
         mode.partsSet = True
 
+    # get all the names of the files in the music folder
+    def getSongOptions(mode):
+        mode.filesInFolder = os.listdir('music')
+    
+    ###############################################
+    # Checking for events
+    ###############################################
+
     def keyPressed(mode, event):
         if event.key in mode.keyReleasedTimes:
             mode.keyReleasedTimes.pop(event.key)
@@ -318,6 +338,10 @@ class PlayMode(Mode):
         if mode.bx0 < x < mode.bx1 and mode.by0 < y < mode.by1:
             mode.app.setActiveMode(mode.app.HomeMode)
 
+    ###############################################
+    # Drawing
+    ###############################################
+
     # draw all gameboards
     def drawGameboards(mode, canvas):
         for gameboard in mode.gameboards:
@@ -372,7 +396,6 @@ class PlayMode(Mode):
                     canvas.create_oval(cx - r, cy - r, cx + r, cy + r, outline=color, width=4, fill='black')
                     r *= .6
                     canvas.create_oval(cx - r, cy - r, cx + r, cy + r, outline=color, width=4, fill='black')
-
 
     # draw all obstacles
     def drawObstacles(mode, canvas, gameboard):
@@ -505,10 +528,6 @@ class PlayMode(Mode):
         textY = mode.height - 10
         canvas.create_text(textX, textY, text='Italicized titles with * have a preset gameboard.', anchor='s', font='System 18 bold italic', fill='white')
 
-    # get all the names of the files in the music folder
-    def getSongOptions(mode):
-        mode.filesInFolder = os.listdir('music')
-    
     # draw the part options for a song the user can choose from
     def drawParts(mode, canvas):
         startY = 50
@@ -531,18 +550,11 @@ class PlayMode(Mode):
         textX, textY = (mode.bx0 + mode.bx1) / 2, (mode.by0 + mode.by1) / 2
         canvas.create_image(textX, textY, image=ImageTk.PhotoImage(mode.homeButton))
 
-    # get background image
-    def initBackground(mode):
-        # image from https://www.mobilebeat.com/wp-content/uploads/2016/07/Background-Music-768x576-1280x720.jpg
-        mode.background = mode.scaleImage(mode.loadImage("pictures/homebackground.png"), 1/2)
-        # images from https://www.flaticon.com/
-        mode.skull = mode.loadImage("pictures/skull.png")
-        mode.sword = mode.loadImage("pictures/sword.png")
-    
     # draw background
     def drawBackground(mode, canvas):
         canvas.create_image(mode.width / 2, mode.height / 2, image=ImageTk.PhotoImage(mode.background))
 
+    # draw press p to play message
     def drawPressP(mode, canvas):
         x0 = 100
         x1 = mode.width - 100
