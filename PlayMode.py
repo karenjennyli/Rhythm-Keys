@@ -505,7 +505,6 @@ class PlayMode(Mode):
         textY = mode.height - 10
         canvas.create_text(textX, textY, text='Italicized titles with * have a preset gameboard.', anchor='s', font='System 18 bold italic', fill='white')
 
-
     # get all the names of the files in the music folder
     def getSongOptions(mode):
         mode.filesInFolder = os.listdir('music')

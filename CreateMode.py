@@ -515,13 +515,19 @@ class CreateMode(Mode):
         x1 = x0 + boxWidth
         y0 = mode.height / 2 - boxHeight / 2
         y1 = y0 + boxHeight
-        canvas.create_rectangle(x0, y0, x1, y1, fill='black', outline='white', width=4)
-        canvas.create_text(mode.width / 2, mode.height / 2 - 15, text=f'{mode.songName} added to music library!', fill='white', font='System 18 bold')
-        canvas.create_text(mode.width / 2, mode.height / 2 + 15, text=f'Press "New" to create new song.', fill='white', font='System 18 bold')
+        canvas.create_rectangle(x0, y0, x1, y1, fill='black', outline='white',
+                                width=4)
+        canvas.create_text(mode.width / 2, mode.height / 2 - 15,
+                           text=f'{mode.songName} added to music library!',
+                           fill='white', font='System 18 bold')
+        canvas.create_text(mode.width / 2, mode.height / 2 + 15,
+                           text=f'Press "New" to create new song.',
+                           fill='white', font='System 18 bold')
 
     def drawHelp(mode, canvas):
         msg3 = '"T" = token, "O" = obstacle, "@" = attack'
-        canvas.create_text(mode.width / 2, mode.height - 140, text=msg3, font='System 18 bold italic', fill='white')
+        canvas.create_text(mode.width / 2, mode.height - 140, text=msg3,
+                           font='System 18 bold italic', fill='white')
 
     def getFiles(mode):
         mode.filesInFolder = os.listdir('gameboards')
@@ -531,9 +537,11 @@ class CreateMode(Mode):
         x1 = mode.width
         y0 = 0
         y1 = mode.height
-        canvas.create_rectangle(x0, y0, x1, y1, fill='black', outline='white', width=4)
+        canvas.create_rectangle(x0, y0, x1, y1, fill='black', outline='white', 
+                                width=4)
         startY = 50
-        canvas.create_text(mode.width * 3 / 4, startY, text='Grid Options', fill='white', font='System 24 bold')
+        canvas.create_text(mode.width * 3 / 4, startY, text='Grid Options',
+                           fill='white', font='System 24 bold')
         startY += 50
         intervalY = 20
         numberX = mode.width / 2 + 50
@@ -541,8 +549,10 @@ class CreateMode(Mode):
         for i in range(len(mode.filesInFolder)):
             fileName = mode.filesInFolder[i]
             name = fileName.split('.')[0]
-            canvas.create_text(numberX, startY + intervalY * i, text=str(i), anchor='w', fill='white', font='System 14 bold')
-            canvas.create_text(nameX, startY + intervalY * i, text=name, anchor='w', fill='white', font='System 14 bold')
+            canvas.create_text(numberX, startY + intervalY * i, text=str(i),
+                               anchor='w', fill='white', font='System 14 bold')
+            canvas.create_text(nameX, startY + intervalY * i, text=name,
+                               anchor='w', fill='white', font='System 14 bold')
 
     def redrawAll(mode, canvas):
         canvas.create_rectangle(0, 0, mode.width, mode.height, fill='black')
